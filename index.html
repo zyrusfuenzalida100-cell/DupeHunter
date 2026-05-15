@@ -1,1567 +1,497 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DupeHunter — AI Duplicate File Finder</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Duplicate Janitor</title>
+    <style>
+        :root {
+            --bg-dark: #111827;
+            --bg-card: #1f2937;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-blue: #2563eb;
+            --accent-red: #ef4444;
+            --border-color: #374151;
+        }
 
-:root {
-  --bg:#080810;--surface:#0f0f1a;--surface2:#161625;--surface3:#1e1e30;--surface4:#26263a;
-  --border:#2a2a40;--border2:#363650;
-  --accent:#ff3e6c;--accent2:#7c3aed;--accent3:#06b6d4;
-  --text:#eeeeff;--text2:#a0a0c0;--muted:#55556a;
-  --warn:#f59e0b;--ok:#10b981;--bad:#ef4444;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(ellipse 70% 50% at 15% 5%,rgba(124,58,237,.07) 0%,transparent 60%),
-             radial-gradient(ellipse 60% 40% at 85% 95%,rgba(255,62,108,.05) 0%,transparent 60%)}
-.wrap{max-width:1140px;margin:0 auto;padding:0 20px;position:relative;z-index:1}
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            padding-bottom: 120px;
+        }
 
-/* HEADER */
-header{padding:26px 0 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);margin-bottom:28px}
-.logo{display:flex;align-items:center;gap:12px}
-.logo-mk{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 0 18px rgba(255,62,108,.3)}
-.logo h1{font-size:19px;font-weight:800;letter-spacing:-.5px}
-.logo h1 span{color:var(--accent)}
-.ai-pill{background:linear-gradient(90deg,rgba(124,58,237,.2),rgba(255,62,108,.2));border:1px solid rgba(124,58,237,.4);color:#c084fc;padding:5px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1px;font-family:'JetBrains Mono',monospace}
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
 
-/* STEPS */
-.steps{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:28px}
-.step{flex:1;padding:12px 14px;display:flex;align-items:center;gap:9px;opacity:.3;transition:all .3s;border-right:1px solid var(--border)}
-.step:last-child{border-right:none}
-.step.active{opacity:1;background:var(--surface2)}
-.step.done{opacity:.55}
-.step.done .sn{background:var(--ok)}
-.sn{width:24px;height:24px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;flex-shrink:0}
-.step.active .sn{background:linear-gradient(135deg,var(--accent),var(--accent2))}
-.sl{font-size:11px;font-weight:700}
-.ss{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:1px}
+        .main-header {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.5rem;
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
 
-/* PANELS */
-.panel{display:none;animation:fadeUp .35s ease}
-.panel.active{display:block}
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+        @media (min-width: 768px) {
+            .main-header { flex-direction: row; }
+        }
 
-/* DROP ZONE */
-.dz{border:2px dashed var(--border2);border-radius:18px;padding:70px 36px;text-align:center;cursor:pointer;background:var(--surface);transition:all .3s;position:relative;overflow:hidden}
-.dz::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at center,rgba(255,62,108,.07) 0%,transparent 70%);opacity:0;transition:opacity .3s}
-.dz:hover,.dz.drag-over{border-color:var(--accent);background:var(--surface2)}
-.dz:hover::before,.dz.drag-over::before{opacity:1}
-.di{font-size:56px;display:block;margin-bottom:16px;filter:drop-shadow(0 0 14px rgba(255,62,108,.4))}
-.dz h2{font-size:24px;font-weight:800;margin-bottom:6px}
-.dz p{color:var(--text2);font-size:13px;margin-bottom:22px}
-#fi{display:none}
+        .title {
+            margin: 0;
+            font-size: 1.8rem;
+            background: linear-gradient(to right, #60a5fa, #f87171);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-/* BUTTONS */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;transition:all .2s;white-space:nowrap}
-.bp{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
-.bp:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(255,62,108,.3)}
-.bg{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.bg:hover{background:var(--surface3);border-color:var(--border2)}
-.bk{background:rgba(16,185,129,.12);color:var(--ok);border:1px solid rgba(16,185,129,.28)}
-.bk:hover{background:rgba(16,185,129,.22)}
-.bd{background:rgba(239,68,68,.12);color:var(--bad);border:1px solid rgba(239,68,68,.28)}
-.bd:hover{background:rgba(239,68,68,.22)}
-.btn.sm{padding:5px 11px;font-size:10px;border-radius:6px}
-.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+        .subtitle { color: var(--text-muted); font-size: 0.875rem; margin: 0.2rem 0 0 0; }
 
-/* CONFIG */
-.cfg-g{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
-.cfg-c{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:14px;cursor:pointer;transition:all .2s}
-.cfg-c:hover{border-color:var(--border2);background:var(--surface2)}
-.cfg-c.on{border-color:var(--accent);background:var(--surface2)}
-.cfg-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
-.cfg-t{display:flex;align-items:center;gap:7px;font-weight:700;font-size:12px}
-.cfg-d{font-size:10px;color:var(--text2);line-height:1.5}
-.tog{width:30px;height:16px;background:var(--surface4);border-radius:8px;position:relative;transition:background .2s;flex-shrink:0}
-.tog::after{content:'';width:10px;height:10px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:transform .2s}
-.cfg-c.on .tog{background:var(--accent)}
-.cfg-c.on .tog::after{transform:translateX(14px)}
+        .controls { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
+        @media (min-width: 768px) { .controls { width: auto; } }
 
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
-.chip{padding:4px 11px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:4px}
-.chip:hover{border-color:var(--border2)}
-.chip.on{background:rgba(124,58,237,.18);border-color:var(--accent2);color:#c084fc}
+        .input-group { position: relative; display: flex; }
+        .api-input {
+            width: 100%;
+            background: #374151;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.6rem 1rem;
+            color: white;
+            font-size: 0.9rem;
+        }
 
-.fbar-box{background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
-.fbl{display:flex;align-items:center;gap:11px}
-.fbi{font-size:26px}
-.fbn{font-size:14px;font-weight:700;margin-bottom:2px}
-.fbm{font-size:10px;color:var(--text2);font-family:'JetBrains Mono',monospace}
+        .clear-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.7rem;
+            background: #4b5563;
+            border: none;
+            color: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
 
-/* PROGRESS */
-.pw{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:44px 36px;text-align:center}
-.pr{width:110px;height:110px;margin:0 auto 22px;position:relative}
-.pr svg{transform:rotate(-90deg)}
-.pt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.pp{font-size:24px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent)}
-.pl{font-size:9px;color:var(--muted)}
-.ps{font-size:12px;color:var(--text2);font-family:'JetBrains Mono',monospace;margin-bottom:5px;min-height:18px}
-.pf{font-size:10px;color:var(--accent2);font-family:'JetBrains Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:380px;margin:0 auto;min-height:14px}
-.ptr{width:100%;height:3px;background:var(--surface3);border-radius:2px;margin-top:22px;overflow:hidden}
-.pfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .3s;width:0%;position:relative;overflow:hidden}
-.pfill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);animation:sh 1.4s infinite}
-@keyframes sh{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+        .button-row { display: flex; gap: 0.5rem; }
+        .primary-btn {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
 
-/* RESULTS HEADER */
-.rh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
-.rh h2{font-size:20px;font-weight:800}
-.rh p{font-size:11px;color:var(--text2);margin-top:3px;font-family:'JetBrains Mono',monospace}
-.stats-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
-.sp{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;display:flex;align-items:center;gap:8px}
-.sv{font-size:17px;font-weight:800;font-family:'JetBrains Mono',monospace}
-.sv.r{color:var(--bad)}.sv.y{color:var(--warn)}.sv.p{color:#c084fc}.sv.c{color:var(--accent3)}.sv.g{color:var(--ok)}
-.sl2{font-size:9px;color:var(--muted)}
+        .icon-btn {
+            background: #374151;
+            border: none;
+            color: white;
+            padding: 0.7rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
 
-/* BULK BAR */
-.bulk{background:var(--surface2);border:1px solid var(--border);border-radius:11px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.bulk-l{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.bulk-r{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.sel-lbl{font-size:11px;color:var(--text2);font-family:'JetBrains Mono',monospace}
-.sel-lbl b{color:var(--text)}
+        .status-box {
+            padding: 1rem;
+            background: rgba(37, 99, 235, 0.1);
+            border: 1px solid rgba(37, 99, 235, 0.3);
+            border-radius: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
 
-/* FILTER BAR */
-.fb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.fb-ttl{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-right:3px}
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--accent-blue);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
 
-/* DUP GROUPS */
-.dup{background:var(--surface);border:1px solid var(--border);border-radius:13px;margin-bottom:10px;overflow:hidden;transition:border-color .2s}
-.dup.exact{border-left:3px solid var(--bad)}
-.dup.similar{border-left:3px solid var(--warn)}
-.dup.ai-detected{border-left:3px solid var(--accent2)}
-.dh{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;background:var(--surface);transition:background .15s;gap:9px}
-.dh:hover{background:var(--surface2)}
-.dhl{display:flex;align-items:center;gap:9px;flex:1;min-width:0}
-.tb{padding:3px 8px;border-radius:4px;font-size:8px;font-weight:700;font-family:'JetBrains Mono',monospace;white-space:nowrap;flex-shrink:0;letter-spacing:.5px}
-.te{background:rgba(239,68,68,.1);color:var(--bad);border:1px solid rgba(239,68,68,.22)}
-.ts{background:rgba(245,158,11,.1);color:var(--warn);border:1px solid rgba(245,158,11,.22)}
-.ta{background:rgba(124,58,237,.1);color:#c084fc;border:1px solid rgba(124,58,237,.22)}
-.dgn{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dgm{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;white-space:nowrap}
-.dhr{display:flex;align-items:center;gap:7px;flex-shrink:0}
-.cn{background:var(--surface3);border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text2)}
-.chv{color:var(--muted);transition:transform .3s;font-size:10px}
-.dup.open .chv{transform:rotate(180deg)}
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-/* GROUP TOOLBAR */
-.gtb{padding:8px 16px;background:var(--surface2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:none;align-items:center;gap:6px;flex-wrap:wrap}
-.dup.open .gtb{display:flex}
-.gtb-lbl{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.5px;margin-right:3px}
+        .results-grid { display: grid; gap: 1.5rem; }
+        .empty-state { padding: 5rem 0; text-align: center; opacity: 0.5; }
 
-/* FILE ROWS */
-.dfiles{display:none}
-.dup.open .dfiles{display:block}
-.ainote{padding:10px 16px;background:rgba(124,58,237,.05);border-bottom:1px solid var(--border);font-size:10px;color:#a78bfa;display:flex;align-items:flex-start;gap:7px;line-height:1.6}
+        .duplicate-group {
+            background: var(--bg-card);
+            padding: 1.25rem;
+            border-radius: 1rem;
+            border-left: 5px solid var(--accent-red);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
 
-.fr{display:flex;align-items:stretch;border-bottom:1px solid rgba(255,255,255,.03);transition:background .12s;position:relative}
-.fr:last-child{border-bottom:none}
-.fr:hover{background:var(--surface2)}
-.fr.sk{background:rgba(16,185,129,.06)}
-.fr.sd{background:rgba(239,68,68,.05)}
-.fr.sk:hover{background:rgba(16,185,129,.1)}
-.fr.sd:hover{background:rgba(239,68,68,.08)}
-.frs{width:3px;flex-shrink:0;transition:background .2s;background:transparent}
-.fr.sk .frs{background:var(--ok)}
-.fr.sd .frs{background:var(--bad)}
-.fri{display:flex;align-items:center;gap:9px;padding:9px 14px;flex:1;min-width:0}
-.fcb{width:14px;height:14px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+        .file-card {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 0.75rem;
+            margin-top: 0.75rem;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
 
-/* THUMBNAIL */
-.thumb{width:42px;height:42px;border-radius:7px;overflow:hidden;background:var(--surface3);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:19px;transition:transform .15s;border:1px solid var(--border);position:relative}
-.thumb:hover{transform:scale(1.08);border-color:var(--accent2);z-index:1}
-.thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.pov{position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:14px}
+        .preview-box {
+            width: 64px;
+            height: 64px;
+            background: #111827;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 1px solid var(--border-color);
+        }
 
-.fi2{flex:1;min-width:0}
-.fn{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
-.fp{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fsz{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--text2);white-space:nowrap;flex-shrink:0}
-.fdt{font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--muted);white-space:nowrap;flex-shrink:0}
-.simb{width:44px;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden;flex-shrink:0}
-.simf{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
+        .preview-img { width: 100%; height: 100%; object-fit: cover; }
 
-.stag{padding:2px 7px;border-radius:4px;font-size:8px;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:.5px;white-space:nowrap;flex-shrink:0}
-.sk-tag{background:rgba(16,185,129,.12);color:var(--ok);border:1px solid rgba(16,185,129,.25)}
-.sd-tag{background:rgba(239,68,68,.1);color:var(--bad);border:1px solid rgba(239,68,68,.2)}
-.sn-tag{background:var(--surface3);color:var(--muted);border:1px solid var(--border)}
+        .action-bar {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 850px;
+            background: rgba(31, 41, 55, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.25rem;
+            border-radius: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            z-index: 100;
+        }
 
-.fra{display:flex;gap:4px;flex-shrink:0;align-items:center}
-.ebtn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:3px 5px;border-radius:5px;transition:all .15s}
-.ebtn:hover{background:var(--surface3);color:var(--text)}
+        .selection-info { display: flex; align-items: center; gap: 1.5rem; }
+        .badge { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 800; font-size: 0.8rem; }
+        
+        .format-selector { display: flex; flex-direction: column; gap: 0.2rem; }
+        .format-selector label { font-size: 0.65rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; }
+        .format-selector select { 
+            background: #374151; 
+            color: white; 
+            border: 1px solid var(--border-color); 
+            border-radius: 0.4rem; 
+            padding: 0.3rem; 
+            font-size: 0.85rem; 
+        }
 
-/* MODAL */
-.mbg{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(10px);padding:18px}
-.mbg.open{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;max-width:860px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.6);animation:mIn .22s ease}
-@keyframes mIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
-.mhd{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0}
-.mt{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mm{font-size:10px;color:var(--text2);font-family:'JetBrains Mono',monospace;margin-top:2px}
-.mcls{background:var(--surface3);border:none;color:var(--text);width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:background .15s}
-.mcls:hover{background:var(--surface4)}
-.mbd{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:18px;min-height:200px}
-.mbd img{max-width:100%;max-height:62vh;border-radius:9px;object-fit:contain}
-.mbd video{max-width:100%;max-height:62vh;border-radius:9px}
-.mbd audio{width:100%;min-width:260px}
-.mft{padding:12px 18px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;flex-shrink:0}
-.mnav{display:flex;align-items:center;gap:7px}
-.mni{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
-.mfa{display:flex;gap:7px}
-.bigicon{font-size:72px;display:block;text-align:center;padding:36px 0}
-.fdtxt{text-align:center;color:var(--text2);font-size:12px;padding-bottom:16px}
+        .ai-btn {
+            background: linear-gradient(to right, #dc2626, #f87171);
+            border: none;
+            color: white;
+            padding: 0.8rem 1.8rem;
+            border-radius: 1rem;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: transform 0.2s;
+        }
 
-/* EXPORT MENU */
-.emitem{display:flex;align-items:center;gap:10px;width:100%;background:none;border:1px solid transparent;border-radius:8px;padding:8px 10px;cursor:pointer;text-align:left;transition:all .15s;color:var(--text);font-family:'Syne',sans-serif}
-.emitem:hover{background:var(--surface3);border-color:var(--border2)}
-.emico{font-size:20px;flex-shrink:0;width:28px;text-align:center}
-.emtitle{font-size:12px;font-weight:700;margin-bottom:2px}
-.emtitle code{background:var(--surface3);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent2)}
-.emsub{font-size:10px;color:var(--muted)}
+        .ai-btn:active { transform: scale(0.96); }
 
-/* STICKY ACTION BAR */
-.abar{position:sticky;bottom:0;background:rgba(8,8,16,.97);backdrop-filter:blur(16px);border-top:1px solid var(--border);padding:12px 0;margin-top:28px;z-index:100}
-.abi{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.al{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-.ar{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-.asumm{font-size:11px;color:var(--text2);font-family:'JetBrains Mono',monospace}
-.asumm b{color:var(--text)}
-
-/* EMPTY */
-.empty{text-align:center;padding:60px 28px;color:var(--muted)}
-.empty .ico{font-size:54px;display:block;margin-bottom:14px}
-.empty h3{font-size:17px;font-weight:700;color:var(--text);margin-bottom:7px}
-.empty p{font-size:12px}
-
-/* TOASTS */
-.tc{position:fixed;bottom:76px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:6px}
-.toast{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:9px 14px;font-size:11px;display:flex;align-items:center;gap:8px;animation:tIn .22s ease;box-shadow:0 8px 22px rgba(0,0,0,.4);max-width:300px}
-@keyframes tIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:translateX(0)}}
-
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-
-@media(max-width:600px){.cfg-g{grid-template-columns:1fr}.steps{display:none}.fdt,.simb{display:none}}
-</style>
+        .hidden { display: none !important; }
+        
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--accent-red);
+        }
+    </style>
 </head>
 <body>
 
-<div class="wrap">
-<header>
-  <div class="logo">
-    <div class="logo-mk">🔍</div>
-    <h1>Dupe<span>Hunter</span></h1>
-  </div>
-  <div style="display:flex;align-items:center;gap:8px">
-    <div class="ai-pill" id="aiPill">✦ AI POWERED</div>
-    <button class="btn bg sm" onclick="toggleSettings()" title="API Settings" style="padding:5px 10px;font-size:13px">⚙️</button>
-  </div>
-</header>
-
-<!-- SETTINGS DRAWER -->
-<div id="settingsDrawer" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:20px;animation:fadeUp .25s ease">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-    <div style="font-size:13px;font-weight:700">⚙️ AI Settings</div>
-    <button class="btn bg sm" onclick="toggleSettings()">✕ Close</button>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-    <!-- GROQ KEY -->
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <span style="font-size:16px">⚡</span>
-        <div>
-          <div style="font-size:12px;font-weight:700">Groq API Key</div>
-          <div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">Ultra-fast LLM inference</div>
-        </div>
-        <div id="groqStatus" style="margin-left:auto;font-size:9px;padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-weight:700;background:var(--surface3);color:var(--muted)">NOT SET</div>
-      </div>
-      <div style="display:flex;gap:6px">
-        <input type="password" id="groqKeyInput" placeholder="gsk_…" oninput="updateKeyStatus()"
-          style="flex:1;background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;outline:none">
-        <button class="btn bp sm" onclick="saveGroqKey()">Save</button>
-      </div>
-      <div style="margin-top:7px;font-size:9px;color:var(--muted);line-height:1.5">
-        Get your key at <a href="https://console.groq.com" target="_blank" style="color:var(--accent2)">console.groq.com</a> — free tier available.<br>
-        Uses <code style="color:#c084fc">llama-3.3-70b-versatile</code> for fast AI duplicate detection.
-      </div>
-    </div>
-    <!-- AI PROVIDER SELECT -->
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:10px">🤖 AI Provider</div>
-      <div style="display:flex;flex-direction:column;gap:7px">
-        <label style="display:flex;align-items:center;gap:9px;cursor:pointer;padding:7px 10px;border-radius:7px;border:1px solid var(--accent);background:var(--surface3);transition:all .15s" id="provGroq">
-          <input type="radio" name="aiProvider" value="groq" checked onchange="setProvider(this)" style="accent-color:var(--accent)">
-          <div>
-            <div style="font-size:11px;font-weight:700">Groq ⚡ <span style="background:rgba(16,185,129,.15);color:var(--ok);border:1px solid rgba(16,185,129,.3);padding:1px 5px;border-radius:3px;font-size:8px;font-family:'JetBrains Mono',monospace">RECOMMENDED</span></div>
-            <div style="font-size:9px;color:var(--muted)">Works anywhere · free tier · paste key above</div>
-          </div>
-        </label>
-        <label style="display:flex;align-items:center;gap:9px;cursor:pointer;padding:7px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface3);transition:all .15s" id="provClaude">
-          <input type="radio" name="aiProvider" value="claude" onchange="setProvider(this)" style="accent-color:var(--accent)">
-          <div>
-            <div style="font-size:11px;font-weight:700">Claude <span style="background:rgba(245,158,11,.12);color:var(--warn);border:1px solid rgba(245,158,11,.25);padding:1px 5px;border-radius:3px;font-size:8px;font-family:'JetBrains Mono',monospace">claude.ai ONLY</span></div>
-            <div style="font-size:9px;color:var(--muted)">Only works when opened inside claude.ai chat</div>
-          </div>
-        </label>
-        <label style="display:flex;align-items:center;gap:9px;cursor:pointer;padding:7px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface3);transition:all .15s" id="provNone">
-          <input type="radio" name="aiProvider" value="none" onchange="setProvider(this)" style="accent-color:var(--accent)">
-          <div>
-            <div style="font-size:11px;font-weight:700">Skip AI</div>
-            <div style="font-size:9px;color:var(--muted)">Hash + name matching only, no AI needed</div>
-          </div>
-        </label>
-      </div>
-      <div style="margin-top:10px;font-size:9px;color:var(--muted);background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.18);border-radius:6px;padding:7px 10px;line-height:1.5">
-        ⚠️ <strong style="color:var(--warn)">Getting "Failed to fetch"?</strong> Use Groq with your API key, or select "Skip AI" to use hash-only detection.
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="steps" id="sb">
-  <div class="step active" id="step1"><div class="sn">1</div><div><div class="sl">Select Folder</div><div class="ss">choose dir</div></div></div>
-  <div class="step" id="step2"><div class="sn">2</div><div><div class="sl">Configure</div><div class="ss">set options</div></div></div>
-  <div class="step" id="step3"><div class="sn">3</div><div><div class="sl">Scanning</div><div class="ss">analyzing</div></div></div>
-  <div class="step" id="step4"><div class="sn">4</div><div><div class="sl">Results</div><div class="ss">manage files</div></div></div>
-</div>
-
-<!-- PANEL 1 -->
-<div class="panel active" id="p1">
-  <div style="background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.25);border-radius:10px;padding:11px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;font-size:11px;line-height:1.6">
-    <span style="font-size:16px;flex-shrink:0">🧠</span>
-    <div>
-      <strong style="color:#c084fc">AI Duplicate Detection</strong> — For AI-powered analysis, click <strong>⚙️</strong> above and add your free
-      <a href="https://console.groq.com" target="_blank" style="color:var(--accent2);text-decoration:underline">Groq API key</a>.
-      Hash + name matching works without any key.
-    </div>
-  </div>
-  <div class="dz" id="dz" onclick="document.getElementById('fi').click()">
-    <span class="di">📁</span>
-    <h2>Drop your folder here</h2>
-    <p>Click to browse — every file inside will be scanned for duplicates</p>
-    <button class="btn bp" onclick="event.stopPropagation();document.getElementById('fi').click()">📂 Choose Folder</button>
-    <input type="file" id="fi" webkitdirectory multiple>
-  </div>
-</div>
-
-<!-- PANEL 2 -->
-<div class="panel" id="p2">
-  <div class="fbar-box">
-    <div class="fbl"><div class="fbi">📁</div><div><div class="fbn" id="fName">—</div><div class="fbm" id="fMeta">—</div></div></div>
-    <button class="btn bg sm" onclick="go1()">✕ Change</button>
-  </div>
-  <div class="cfg-g">
-    <div class="cfg-c on" id="ce" onclick="tcfg(this)">
-      <div class="cfg-h"><div class="cfg-t"><span>🔑</span> Exact Hash Match</div><div class="tog"></div></div>
-      <div class="cfg-d">SHA-256 fingerprint — 100% accurate byte-identical detection</div>
-    </div>
-    <div class="cfg-c on" id="cn" onclick="tcfg(this)">
-      <div class="cfg-h"><div class="cfg-t"><span>📝</span> Same Name + Size</div><div class="tog"></div></div>
-      <div class="cfg-d">Identical filename + file size — very likely copies</div>
-    </div>
-    <div class="cfg-c on" id="ca" onclick="tcfg(this)">
-      <div class="cfg-h"><div class="cfg-t"><span>🧠</span> AI Content Analysis <span style="background:linear-gradient(90deg,rgba(124,58,237,.25),rgba(255,62,108,.25));border:1px solid rgba(124,58,237,.45);color:#c084fc;padding:1px 5px;border-radius:3px;font-size:8px;font-weight:700;font-family:'JetBrains Mono',monospace">AI</span></div><div class="tog"></div></div>
-      <div class="cfg-d">AI finds semantic duplicates: resized images, re-encoded media, renamed variants. Uses Groq or Claude (set in ⚙️ settings)</div>
-    </div>
-    <div class="cfg-c on" id="cm" onclick="tcfg(this)">
-      <div class="cfg-h"><div class="cfg-t"><span>🎵</span> Media Fingerprint</div><div class="tog"></div></div>
-      <div class="cfg-d">Detects IMG_1234 vs IMG_1234 copy, variant filenames in media</div>
-    </div>
-  </div>
-  <div style="margin-bottom:6px;font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1px">File Types to Scan</div>
-  <div class="chips" id="typeChips">
-    <div class="chip on" data-t="all" onclick="pt(this)">✦ All</div>
-    <div class="chip" data-t="image" onclick="pt(this)">🖼️ Images</div>
-    <div class="chip" data-t="video" onclick="pt(this)">🎬 Videos</div>
-    <div class="chip" data-t="audio" onclick="pt(this)">🎵 Audio</div>
-    <div class="chip" data-t="doc" onclick="pt(this)">📄 Docs</div>
-    <div class="chip" data-t="archive" onclick="pt(this)">🗜️ Archives</div>
-    <div class="chip" data-t="code" onclick="pt(this)">💻 Code</div>
-  </div>
-  <div style="display:flex;justify-content:flex-end;gap:9px">
-    <button class="btn bg" onclick="go1()">← Back</button>
-    <button class="btn bp" onclick="startScan()">🚀 Start Scanning</button>
-  </div>
-</div>
-
-<!-- PANEL 3 -->
-<div class="panel" id="p3">
-  <div class="pw">
-    <div class="pr">
-      <svg width="110" height="110" viewBox="0 0 110 110">
-        <circle cx="55" cy="55" r="47" fill="none" stroke="#161625" stroke-width="7"/>
-        <circle id="pc" cx="55" cy="55" r="47" fill="none" stroke="url(#pg)" stroke-width="7"
-          stroke-dasharray="295.3" stroke-dashoffset="295.3" stroke-linecap="round"/>
-        <defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#ff3e6c"/><stop offset="100%" stop-color="#7c3aed"/>
-        </linearGradient></defs>
-      </svg>
-      <div class="pt"><div class="pp" id="ppct">0%</div><div class="pl">complete</div></div>
-    </div>
-    <div class="ps" id="pst">Initializing…</div>
-    <div class="pf" id="pfl"></div>
-    <div class="ptr"><div class="pfill" id="pb"></div></div>
-  </div>
-</div>
-
-<!-- PANEL 4 -->
-<div class="panel" id="p4">
-  <div class="rh">
-    <div><h2>Duplicates Found</h2><p id="rsub">—</p></div>
-    <button class="btn bg sm" onclick="go1()">🔄 New Scan</button>
-  </div>
-
-  <div class="stats-row" id="srow"></div>
-
-  <!-- BULK BAR -->
-  <div class="bulk">
-    <div class="bulk-l">
-      <span class="sel-lbl">Selected: <b id="selc">0</b></span>
-      <button class="btn bg sm" onclick="selAll()">☑ All Dupes</button>
-      <button class="btn bg sm" onclick="selNone()">☐ None</button>
-      <button class="btn bg sm" onclick="selInv()">⇄ Invert</button>
-    </div>
-    <div class="bulk-r">
-      <button class="btn bk sm" onclick="bulkKeep()">✓ Keep Selected</button>
-      <button class="btn bd sm" onclick="bulkDel()">🗑 Mark Delete</button>
-      <button class="btn bg sm" onclick="bulkClear()">✕ Clear Marks</button>
-      <button class="btn bp sm" id="expBtn" onclick="doExport()" disabled>📄 Export List</button>
-    </div>
-  </div>
-
-  <!-- FILTER -->
-  <div class="fb">
-    <span class="fb-ttl">Filter:</span>
-    <div class="chip on" data-f="all" onclick="sf(this)">All</div>
-    <div class="chip" data-f="exact" onclick="sf(this)">🔴 Exact</div>
-    <div class="chip" data-f="similar" onclick="sf(this)">🟡 Similar</div>
-    <div class="chip" data-f="ai" onclick="sf(this)">🟣 AI</div>
-    <div class="chip" data-f="del" onclick="sf(this)">🗑 Marked Delete</div>
-    <div class="chip" data-f="keep" onclick="sf(this)">✓ Marked Keep</div>
-  </div>
-
-  <div id="ra"></div>
-
-  <!-- STICKY BAR -->
-  <div class="abar">
-    <div class="abi wrap">
-      <div class="al">
-        <span class="asumm">Sel: <b id="bsel">0</b> · Delete: <b id="bdel" style="color:var(--bad)">0</b> · Keep: <b id="bkp" style="color:var(--ok)">0</b></span>
-      </div>
-      <div class="ar">
-        <button class="btn bg sm" onclick="autoKeep()">⚡ Auto-Keep Newest</button>
-        <div style="position:relative;display:inline-block" id="exportWrap">
-          <button class="btn bd sm" id="mdb" onclick="toggleExportMenu()" disabled>📦 Export Script ▾</button>
-          <div id="exportMenu" style="display:none;position:absolute;bottom:calc(100% + 8px);right:0;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:260px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:fadeUp .2s ease">
-            <!-- BASE PATH INPUT -->
-            <div style="padding:8px 6px 10px;border-bottom:1px solid var(--border);margin-bottom:6px">
-              <div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📁 Full folder path on your computer</div>
-              <input id="basePath" type="text" placeholder="e.g. C:\Users\You\Desktop\Memories in my life" spellcheck="false"
-                style="width:100%;background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:10px;outline:none;box-sizing:border-box"
-                oninput="validateBasePath()">
-              <div id="basePathHint" style="font-size:9px;margin-top:5px;color:var(--muted);line-height:1.5">
-                Windows: <code style="color:var(--accent2)">C:\Users\YourName\Desktop\FolderName</code><br>
-                Mac/Linux: <code style="color:var(--accent2)">/Users/yourname/Desktop/FolderName</code>
-              </div>
-              <div id="basePathWarn" style="display:none;font-size:9px;margin-top:4px;color:var(--warn)">⚠️ Enter the full path to your scanned folder</div>
+    <div class="container">
+        <header class="main-header">
+            <div class="brand">
+                <h1 class="title">AI Duplicate Janitor</h1>
+                <p class="subtitle">Scan, Preview, and AI-Powered Cleanup</p>
             </div>
-            <div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;padding:0 6px 6px;text-transform:uppercase;letter-spacing:.5px">Export checked files as…</div>
-            <button class="emitem" onclick="doExport('sh')">
-              <span class="emico">🍎</span>
-              <div><div class="emtitle">Bash Script <code>.sh</code></div><div class="emsub">Mac &amp; Linux · moves to Trash</div></div>
-            </button>
-            <button class="emitem" onclick="doExport('ps1')">
-              <span class="emico">🪟</span>
-              <div><div class="emtitle">PowerShell <code>.ps1</code></div><div class="emsub">Windows · sends to Recycle Bin</div></div>
-            </button>
-            <button class="emitem" onclick="doExport('bat')">
-              <span class="emico">⌨️</span>
-              <div><div class="emtitle">Batch File <code>.bat</code></div><div class="emsub">Windows CMD · permanent delete</div></div>
-            </button>
-            <button class="emitem" onclick="doExport('txt')">
-              <span class="emico">📄</span>
-              <div><div class="emtitle">Plain List <code>.txt</code></div><div class="emsub">Just the file paths</div></div>
-            </button>
-          </div>
+            <div class="controls">
+                <div class="input-group">
+                    <input type="password" id="apiKey" placeholder="Groq API Key (Stored Locally)" class="api-input">
+                    <button onclick="clearKey()" class="clear-btn">Clear</button>
+                </div>
+                <div class="button-row">
+                    <button onclick="selectFolder()" id="scanBtn" class="primary-btn">
+                        <span>📂</span> Scan Folder
+                    </button>
+                    <button onclick="resetApp()" class="icon-btn" title="Reset">🔄</button>
+                </div>
+            </div>
+        </header>
+
+        <div id="statusBox" class="status-box hidden">
+            <span id="statusText">Ready...</span>
+            <div id="loader" class="loader hidden"></div>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
-</div><!-- /wrap -->
 
-<!-- PREVIEW MODAL -->
-<div class="mbg" id="mbg" onclick="closeMod(event)">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="mhd">
-      <div style="flex:1;min-width:0">
-        <div class="mt" id="mttl">Preview</div>
-        <div class="mm" id="mmeta"></div>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-        <button class="btn bg sm" id="mdlbtn" onclick="downloadCurFile()" title="Download file">⬇ Download</button>
-        <button class="mcls" onclick="closeMod()" title="Close (Esc)">✕</button>
-      </div>
-    </div>
+        <div id="resultsGrid" class="results-grid">
+            <div id="emptyState" class="empty-state">
+                <p>Select a folder to begin scanning your local files.</p>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">Requires a modern desktop browser (Chrome, Edge, or Opera).</p>
+            </div>
+        </div>
 
-    <!-- FILE TYPE TABS (shown for multi-type groups) -->
-    <div id="mtypebar" style="display:none;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;gap:8px">
-      <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.5px">Type:</span>
-      <span id="mtypelbl" style="font-size:10px;color:var(--text2);font-family:'JetBrains Mono',monospace;font-weight:600"></span>
-    </div>
-
-    <div class="mbd" id="mbd"></div>
-
-    <!-- PROGRESS BAR for video/audio -->
-    <div id="mloadbar" style="display:none;width:100%;height:2px;background:var(--surface3);overflow:hidden">
-      <div style="width:60%;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));animation:sh 1.2s infinite"></div>
+        <div id="actionBar" class="action-bar hidden">
+            <div class="selection-info">
+                <div class="badge">
+                    <span id="selectedCount">0</span> SELECTED
+                </div>
+                <div class="format-selector">
+                    <label>Export Script Type</label>
+                    <select id="scriptType">
+                        <option value="bat">Windows (.bat)</option>
+                        <option value="sh">Linux/Mac (.sh)</option>
+                        <option value="py">Python (.py)</option>
+                        <option value="pl">Perl (.pl)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button onclick="processAI()" id="aiBtn" class="ai-btn">
+                <span>🤖</span> GENERATE CLEANUP FILE
+            </button>
+        </div>
     </div>
 
-    <div class="mft">
-      <div class="mnav">
-        <button class="btn bg sm" id="mprev" onclick="mnav(-1)">← Prev</button>
-        <span class="mni" id="mni"></span>
-        <button class="btn bg sm" id="mnext" onclick="mnav(1)">Next →</button>
-      </div>
-      <div class="mfa">
-        <button class="btn bk sm" id="mkbtn" onclick="mact('keep')">✓ Keep</button>
-        <button class="btn bd sm" id="mdbtn" onclick="mact('delete')">🗑 Mark Delete</button>
-      </div>
-    </div>
-  </div>
-</div>
+    <script>
+        const STORAGE_KEY = 'groq_api_key_janitor';
+        const MODELS = ["llama-3.1-70b-versatile", "llama-3.3-70b-versatile", "mixtral-8x7b-32768"];
+        let duplicateGroups = {};
+        let selectedPaths = new Set();
 
-<div class="tc" id="tc"></div>
-
-<script>
-// ════════════════════════════════════════════
-// ⚙️  CONFIG — paste your API key here
-// ════════════════════════════════════════════
-const GROQ_API_KEY = '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';  // ← paste your Groq key here e.g. 'gsk_xxxxxxxxxxxx'
-
-// ════════════════════════════════════════════
-// STATE
-// ════════════════════════════════════════════
-let allF=[],groups=[],fst={},sel=new Set();
-let curFilter='all',ftFilter='all';
-let cfg={exact:true,name:true,ai:true,meta:true};
-let mgi=-1,mfi=-1;
-let groqKey=GROQ_API_KEY,aiProvider=GROQ_API_KEY?'groq':'groq';
-let curModalFile=null;
-
-// ════════════════════════════════════════════
-// INPUT
-// ════════════════════════════════════════════
-document.getElementById('fi').addEventListener('change',function(e){
-  const files=Array.from(e.target.files);
-  if(!files.length)return;
-  allF=files.map(f=>({
-    name:f.name,size:f.size,type:gtype(f.name),
-    path:f.webkitRelativePath||f.name,
-    lastModified:f.lastModified,file:f,hash:null,ourl:null
-  }));
-  const folder=allF[0]?.path.split('/')[0]||'Folder';
-  document.getElementById('fName').textContent='📁 '+folder;
-  document.getElementById('fMeta').textContent=allF.length.toLocaleString()+' files · '+fsz(allF.reduce((a,f)=>a+f.size,0))+' total';
-  gostep(2);
-});
-const dz=document.getElementById('dz');
-dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
-dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
-dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');toast('⚠️','Use the Choose Folder button for full access')});
-
-// ════════════════════════════════════════════
-// SETTINGS & API KEY
-// ════════════════════════════════════════════
-
-// Auto-apply hardcoded key on load
-window.addEventListener('DOMContentLoaded',()=>{
-  if(GROQ_API_KEY){
-    const inp=document.getElementById('groqKeyInput');
-    if(inp) inp.value=GROQ_API_KEY;
-    updateKeyStatus();
-    // Select Groq radio
-    const radio=document.querySelector('input[name="aiProvider"][value="groq"]');
-    if(radio){radio.checked=true;setProvider(radio);}
-    toast('⚡','Groq API key loaded from config');
-  }
-});
-function toggleSettings(){
-  const d=document.getElementById('settingsDrawer');
-  d.style.display=d.style.display==='none'?'block':'none';
-}
-function saveGroqKey(){
-  const val=document.getElementById('groqKeyInput').value.trim();
-  groqKey=val;
-  updateKeyStatus();
-  if(val){toast('✅','Groq API key saved — AI analysis will use Groq ⚡');}
-  else{toast('ℹ️','Groq key cleared');}
-}
-function updateKeyStatus(){
-  const val=document.getElementById('groqKeyInput').value.trim();
-  const st=document.getElementById('groqStatus');
-  if(val.startsWith('gsk_')&&val.length>20){
-    st.style.background='rgba(16,185,129,.15)';st.style.color='var(--ok)';st.textContent='✓ SET';
-  }else if(val.length>0){
-    st.style.background='rgba(245,158,11,.12)';st.style.color='var(--warn)';st.textContent='INVALID?';
-  }else{
-    st.style.background='var(--surface3)';st.style.color='var(--muted)';st.textContent='NOT SET';
-  }
-}
-function setProvider(radio){
-  aiProvider=radio.value;
-  const pill=document.getElementById('aiPill');
-  if(aiProvider==='groq') pill.textContent='⚡ GROQ AI';
-  else if(aiProvider==='none') pill.textContent='✦ HASH ONLY';
-  else pill.textContent='✦ AI POWERED';
-  // Highlight active provider card
-  ['provGroq','provClaude','provNone'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.style.borderColor=el.id==='prov'+aiProvider.charAt(0).toUpperCase()+aiProvider.slice(1)?'var(--accent)':'var(--border)';
-  });
-}
-
-// ════════════════════════════════════════════
-// NAVIGATION
-// ════════════════════════════════════════════
-function gostep(n){
-  for(let i=1;i<=4;i++){
-    document.getElementById('p'+i).classList.toggle('active',i===n);
-    const s=document.getElementById('step'+i);
-    s.classList.remove('active','done');
-    if(i<n)s.classList.add('done');
-    else if(i===n)s.classList.add('active');
-  }
-}
-function go1(){allF=[];groups=[];fst={};sel.clear();document.getElementById('fi').value='';gostep(1)}
-
-// ════════════════════════════════════════════
-// CONFIG
-// ════════════════════════════════════════════
-function tcfg(el){el.classList.toggle('on');const id=el.id[1];cfg[{e:'exact',n:'name',a:'ai',m:'meta'}[id]]=el.classList.contains('on')}
-function pt(el){document.querySelectorAll('#typeChips .chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');ftFilter=el.dataset.t}
-
-// ════════════════════════════════════════════
-// SCAN
-// ════════════════════════════════════════════
-async function startScan(){
-  gostep(3);groups=[];fst={};sel.clear();
-  let files=ftFilter==='all'?allF:allF.filter(f=>{
-    const t=ftFilter;
-    return t==='image'?f.type==='image':t==='video'?f.type==='video':t==='audio'?f.type==='audio':
-           t==='doc'?f.type==='document':t==='archive'?f.type==='archive':t==='code'?f.type==='code':true;
-  });
-  sp(0,'Reading files…','');await wait(300);
-  if(cfg.exact){sp(5,'Computing fingerprints…','');await hashFiles(files);}
-  sp(28,'Finding exact duplicates…','');await wait(200);
-  if(cfg.exact)groups.push(...findExact(files));
-  sp(42,'Name & size check…','');await wait(250);
-  if(cfg.name)groups.push(...findName(files));
-  sp(56,'Media fingerprints…','');await wait(350);
-  if(cfg.meta)groups.push(...findMedia(files));
-  if(cfg.ai&&aiProvider!=='none'&&groups.length>0){sp(72,'🧠 AI analysis…',aiProvider==='groq'?'Querying Groq ⚡':'Querying Claude');await wait(400);await runAI(files);}
-  sp(95,'Building results…','');await wait(300);
-  sp(100,'Done!','');await wait(450);
-  renderRes();gostep(4);
-}
-
-async function hashFiles(files){
-  for(let i=0;i<files.length;i++){
-    const f=files[i];
-    try{
-      const buf=await f.file.slice(0,Math.min(f.size,8192)).arrayBuffer();
-      const h=await crypto.subtle.digest('SHA-256',buf);
-      f.hash=Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('')+'_'+f.size;
-    }catch(e){f.hash=`${f.size}_${f.lastModified}`;}
-    if(i%8===0){sp(5+(i/files.length)*21,`Fingerprinting (${i}/${files.length})`,f.path);await wait(1);}
-  }
-}
-
-function findExact(files){
-  const m={};
-  for(const f of files){const k=f.hash||f.size;if(!m[k])m[k]=[];m[k].push(f);}
-  return Object.entries(m).filter(([,g])=>g.length>1).map(([k,g])=>({
-    id:'ex_'+k.slice(0,7),type:'exact',label:'Exact Duplicate',
-    reason:'Byte-identical (SHA-256)',files:g,sim:100,ai:null
-  }));
-}
-function findName(files){
-  const ex=new Set(groups.flatMap(g=>g.files.map(f=>f.path)));
-  const r=files.filter(f=>!ex.has(f.path));
-  const m={};
-  for(const f of r){const k=f.name.toLowerCase()+'_'+f.size;if(!m[k])m[k]=[];m[k].push(f);}
-  return Object.entries(m).filter(([,g])=>g.length>1).map(([k,g])=>({
-    id:'nm_'+k.slice(0,9),type:'similar',label:'Same Name & Size',
-    reason:'Identical name + size',files:g,sim:95,ai:null
-  }));
-}
-function findMedia(files){
-  const ex=new Set(groups.flatMap(g=>g.files.map(f=>f.path)));
-  const med=files.filter(f=>!ex.has(f.path)&&['image','video','audio'].includes(f.type));
-  const m={};
-  for(const f of med){
-    const b=f.name.replace(/\.[^.]+$/,'').replace(/\s*[\(\-_]?(copy|\d+|副本)[\)\s]*/gi,'').trim().toLowerCase();
-    if(b){if(!m[b])m[b]=[];m[b].push(f);}
-  }
-  const out=[];
-  for(const [base,grp] of Object.entries(m)){
-    const u=[...new Map(grp.map(f=>[f.path,f])).values()];
-    if(u.length>1&&u.length<=8){
-      const alr=new Set(out.flatMap(g=>g.files.map(f=>f.path)));
-      const fresh=u.filter(f=>!alr.has(f.path));
-      if(fresh.length>1)out.push({
-        id:'md_'+base.slice(0,7)+'_'+Math.random().toString(36).slice(2,5),
-        type:'similar',label:'Similar Filename',
-        reason:`Variants of "${base}"`,
-        files:fresh,sim:65+Math.floor(Math.random()*25),ai:null
-      });
-    }
-  }
-  return out;
-}
-
-async function runAI(files){
-  // Skip AI if provider is none
-  if(aiProvider==='none'){toast('ℹ️','AI skipped — hash & name matching only');return;}
-
-  // Check Groq key if using Groq
-  if(aiProvider==='groq'&&groqKey.length<10){
-    toast('⚠️','No Groq key set — click ⚙️ to add your key, or set AI to "Skip AI"');
-    return;
-  }
-
-  const sample=files.slice(0,60).map(f=>({n:f.name,s:f.size,t:f.type,d:new Date(f.lastModified).toISOString().split('T')[0]}));
-  const existing=groups.slice(0,20).map(g=>({t:g.type,f:g.files.map(f=>f.name)}));
-  const prompt=`File deduplication expert task. Find semantic duplicates missed by hash matching.
-
-Files (${sample.length} of ${files.length} total):
-${JSON.stringify(sample)}
-
-Already found duplicate groups:
-${JSON.stringify(existing)}
-
-Find: resized images, re-encoded audio/video, renamed copies, reformatted docs, same content different extension.
-Keep all string values SHORT (under 100 chars).
-
-JSON response only:
-{"aiGroups":[{"label":"short label","reason":"brief why","fileNames":["a.jpg","b.jpg"],"similarity":82,"aiAnalysis":"short explanation under 100 chars"}],"groupInsights":{"0":"brief note"},"topInsight":"one sentence"}`;
-
-  try{
-    let txt='';
-
-    if(aiProvider==='groq'){
-      const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+groqKey},
-        body:JSON.stringify({
-          model:'llama-3.3-70b-versatile',
-          max_tokens:4096,
-          response_format:{type:'json_object'},
-          messages:[
-            {role:'system',content:'You are a file deduplication expert. Always reply in pure JSON only, no markdown, no code fences. Keep aiAnalysis strings under 120 chars each.'},
-            {role:'user',content:prompt}
-          ]
-        })
-      });
-      if(!res.ok){
-        const err=await res.json().catch(()=>({}));
-        const msg=err?.error?.message||`HTTP ${res.status}`;
-        toast('⚠️','Groq error: '+msg);
-        return;
-      }
-      const data=await res.json();
-      txt=data.choices?.[0]?.message?.content||'';
-
-    }else if(aiProvider==='claude'){
-      const res=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4096,messages:[{role:'user',content:prompt}]})
-      });
-      if(!res.ok){
-        toast('⚠️','Claude API failed — this only works inside claude.ai. Switch to Groq in ⚙️ Settings.');
-        return;
-      }
-      const data=await res.json();
-      txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
-    }
-
-    if(!txt){toast('⚠️','AI returned empty response');return;}
-
-    // Robust JSON extraction — handle truncation, code fences, extra text
-    let p=null;
-    try{
-      // Strip markdown fences
-      let cleaned=txt.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
-      // If truncated, try to salvage by closing open structures
-      if(!cleaned.endsWith('}')){
-        // Find last complete top-level value
-        const lastBrace=cleaned.lastIndexOf('}');
-        if(lastBrace>0) cleaned=cleaned.slice(0,lastBrace+1);
-        // If still broken, wrap minimal valid structure
-      }
-      p=JSON.parse(cleaned);
-    }catch(e1){
-      // Try extracting just the JSON object with regex
-      try{
-        const m=txt.match(/\{[\s\S]*\}/);
-        if(m) p=JSON.parse(m[0]);
-      }catch(e2){
-        // Try building partial result from whatever parsed before truncation
-        try{
-          const partial=txt.replace(/```json\s*/gi,'').replace(/```/g,'').trim();
-          // Attempt to close any open arrays/objects
-          let fixed=partial;
-          const opens=(fixed.match(/\[/g)||[]).length-(fixed.match(/\]/g)||[]).length;
-          const openBraces=(fixed.match(/\{/g)||[]).length-(fixed.match(/\}/g)||[]).length;
-          // Remove last incomplete item (after last complete comma-separated entry)
-          const lastComma=fixed.lastIndexOf(',"');
-          if(lastComma>100) fixed=fixed.slice(0,lastComma);
-          for(let i=0;i<opens;i++) fixed+=']';
-          for(let i=0;i<openBraces;i++) fixed+='}';
-          p=JSON.parse(fixed);
-        }catch(e3){
-          toast('⚠️','AI response could not be parsed — try scanning again');
-          console.warn('AI parse failed:',e1.message,'\nRaw:',txt.slice(0,300));
-          return;
-        }
-      }
-    }
-    if(p.aiGroups?.length){
-      for(const ag of p.aiGroups){
-        const matched=ag.fileNames.map(n=>files.find(f=>f.name===n||f.path.endsWith('/'+n))).filter(Boolean);
-        if(matched.length>1)groups.push({
-          id:'ai_'+Math.random().toString(36).slice(2,6),
-          type:'ai',label:ag.label||'AI Detected',
-          reason:ag.reason,files:matched,
-          sim:ag.similarity||78,ai:ag.aiAnalysis
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem(STORAGE_KEY);
+            if (savedKey) document.getElementById('apiKey').value = savedKey;
+            
+            document.getElementById('apiKey').addEventListener('input', (e) => {
+                localStorage.setItem(STORAGE_KEY, e.target.value);
+            });
         });
-      }
-    }
-    if(p.groupInsights)for(const [i,note] of Object.entries(p.groupInsights)){
-      const idx=parseInt(i);if(groups[idx]&&!groups[idx].ai)groups[idx].ai=note;
-    }
-    if(p.topInsight)toast('🧠',p.topInsight);
 
-  }catch(e){
-    console.warn('AI error:',e);
-    if(e.message?.includes('fetch')||e.name==='TypeError'){
-      toast('⚠️','Network error — if using Groq, check your API key in ⚙️. If using Claude, open this file inside claude.ai.');
-    }else{
-      toast('⚠️','AI parse error: '+e.message);
-    }
-  }
-}
-
-// ════════════════════════════════════════════
-// RENDER
-// ════════════════════════════════════════════
-function renderRes(){
-  const total=groups.reduce((a,g)=>a+g.files.length,0);
-  const wasted=groups.reduce((a,g)=>{const s=[...g.files].sort((x,y)=>y.size-x.size);return a+s.slice(1).reduce((t,f)=>t+f.size,0);},0);
-  document.getElementById('rsub').textContent=`${groups.length} groups · ${total} files · ~${fsz(wasted)} recoverable`;
-  const ex=groups.filter(g=>g.type==='exact').length,si=groups.filter(g=>g.type==='similar').length,ai=groups.filter(g=>g.type==='ai').length;
-  document.getElementById('srow').innerHTML=`
-    <div class="sp"><div class="sv r">${ex}</div><div class="sl2">Exact</div></div>
-    <div class="sp"><div class="sv y">${si}</div><div class="sl2">Similar</div></div>
-    <div class="sp"><div class="sv p">${ai}</div><div class="sl2">AI Found</div></div>
-    <div class="sp"><div class="sv c">${fsz(wasted)}</div><div class="sl2">Recoverable</div></div>
-    <div class="sp"><div class="sv g">${total}</div><div class="sl2">Total Dupes</div></div>`;
-  renderGroups();
-}
-
-function renderGroups(){
-  const area=document.getElementById('ra');
-  let show=groups;
-  if(curFilter==='exact')show=groups.filter(g=>g.type==='exact');
-  else if(curFilter==='similar')show=groups.filter(g=>g.type==='similar');
-  else if(curFilter==='ai')show=groups.filter(g=>g.type==='ai');
-  else if(curFilter==='del')show=groups.filter(g=>g.files.some(f=>fst[f.path]==='delete'));
-  else if(curFilter==='keep')show=groups.filter(g=>g.files.some(f=>fst[f.path]==='keep'));
-  if(!show.length){
-    if(groups.length===0){
-      area.innerHTML=`<div class="empty"><span class="ico">🎉</span><h3>All duplicates resolved!</h3><p>Your folder is clean. Start a new scan anytime.</p></div>`;
-      document.getElementById('rsub').textContent='All groups resolved — no duplicates remaining';
-    }else{
-      area.innerHTML=`<div class="empty"><span class="ico">✅</span><h3>Nothing here</h3><p>No groups match the filter.</p></div>`;
-    }
-    return;
-  }
-
-  area.innerHTML=show.map(g=>{
-    const gi=groups.indexOf(g);
-    const bc=g.type==='exact'?'te':g.type==='ai'?'ta':'ts';
-    const gc=g.type==='ai'?'ai-detected':g.type;
-    const ico=g.type==='exact'?'🔴':g.type==='ai'?'🟣':'🟡';
-    const sorted=[...g.files].sort((a,b)=>b.lastModified-a.lastModified);
-    const tot=g.files.reduce((a,f)=>a+f.size,0);
-    const ainote=g.ai?`<div class="ainote"><span>🧠</span><span>${esc(g.ai)}</span></div>`:'';
-    const rows=sorted.map((f,fi)=>{
-      const st=fst[f.path]||null;
-      const sc=st==='keep'?' sk':st==='delete'?' sd':'';
-      const stag=st==='keep'?'<span class="stag sk-tag">✓ KEEP</span>':st==='delete'?'<span class="stag sd-tag">🗑 DEL</span>':'<span class="stag sn-tag">—</span>';
-      const chk=sel.has(f.path)?'checked':'';
-      const thumb=mkThumb(f,gi,fi);
-      const simb=g.type!=='exact'?`<div class="simb"><div class="simf" style="width:${g.sim}%"></div></div>`:'';
-      return `<div class="fr${sc}" id="fr_${gi}_${fi}" data-path="${esc(f.path)}"><div class="frs"></div><div class="fri">
-        <input type="checkbox" class="fcb" ${chk} onchange="tsel(this,'${ea(f.path)}')">
-        ${thumb}
-        <div class="fi2"><div class="fn" title="${esc(f.path)}">${esc(f.name)}</div><div class="fp">${esc(f.path)}</div></div>
-        <div class="fsz">${fsz(f.size)}</div>
-        <div class="fdt">${fdate(f.lastModified)}</div>
-        ${simb}${stag}
-        <div class="fra">
-          <button class="ebtn" onclick="openPrev(${gi},${fi})" title="Preview">👁</button>
-          <button class="btn bk sm" onclick="mark('${ea(f.path)}','keep',${gi},${fi})">✓</button>
-          <button class="btn bd sm" onclick="mark('${ea(f.path)}','delete',${gi},${fi})">🗑</button>
-        </div>
-      </div></div>`;
-    }).join('');
-    return `<div class="dup ${gc} open" id="grp_${gi}">
-      <div class="dh" onclick="tgrp(${gi})">
-        <div class="dhl"><span class="tb ${bc}">${ico} ${g.label.toUpperCase()}</span>
-          <div><div class="dgn">${esc(g.files[0]?.name||'—')}</div><div class="dgm">${fsz(tot)} · ${esc(g.reason)}</div></div>
-        </div>
-        <div class="dhr"><span class="cn">${g.files.length} files</span><span class="chv">▼</span></div>
-      </div>
-      <div class="gtb">
-        <span class="gtb-lbl">Group:</span>
-        <button class="btn bg sm" onclick="gsa(${gi},event)">☑ All</button>
-        <button class="btn bg sm" onclick="gsn(${gi},event)">☐ None</button>
-        <button class="btn bk sm" onclick="gma(${gi},'keep',event)">✓ Keep All</button>
-        <button class="btn bd sm" onclick="gma(${gi},'delete',event)">🗑 Del All</button>
-        <button class="btn bg sm" onclick="gak(${gi},event)">⚡ Auto-Keep</button>
-      </div>
-      <div class="dfiles">${ainote}${rows}</div>
-    </div>`;
-  }).join('');
-  updCount();
-}
-
-// ════════════════════════════════════════════
-// THUMBNAILS
-// ════════════════════════════════════════════
-function mkThumb(f,gi,fi){
-  if(f.type==='image'){
-    if(!f.ourl)f.ourl=URL.createObjectURL(f.file);
-    return `<div class="thumb" onclick="openPrev(${gi},${fi})"><img src="${f.ourl}" loading="lazy" onerror="this.parentNode.innerHTML='🖼️'"></div>`;
-  }
-  if(f.type==='video')return `<div class="thumb" onclick="openPrev(${gi},${fi})"><span style="font-size:18px">🎬</span><div class="pov">▶</div></div>`;
-  if(f.type==='audio')return `<div class="thumb" onclick="openPrev(${gi},${fi})"><span style="font-size:18px">🎵</span></div>`;
-  return `<div class="thumb" onclick="openPrev(${gi},${fi})"><span style="font-size:18px">${gicon(f.type,f.name)}</span></div>`;
-}
-
-// ════════════════════════════════════════════
-// PREVIEW MODAL
-// ════════════════════════════════════════════
-function openPrev(gi,fi){mgi=gi;mfi=fi;showMod();}
-function showMod(){
-  const g=groups[mgi];if(!g)return;
-  const sorted=[...g.files].sort((a,b)=>b.lastModified-a.lastModified);
-  const f=sorted[mfi];if(!f)return;
-  curModalFile=f;
-
-  document.getElementById('mttl').textContent=f.name;
-  document.getElementById('mmeta').textContent=`${fsz(f.size)} · ${fdate(f.lastModified)} · ${f.path}`;
-
-  // Type label
-  const typebar=document.getElementById('mtypebar');
-  const typelbl=document.getElementById('mtypelbl');
-  const ext=(f.name.split('.').pop()||'').toUpperCase();
-  const typeMap={image:'🖼️ Image',video:'🎬 Video',audio:'🎵 Audio',document:'📄 Document',archive:'🗜️ Archive',code:'💻 Code',other:'📎 File'};
-  typelbl.textContent=`${ext} · ${typeMap[f.type]||'📎 File'}`;
-  typebar.style.display='flex';
-
-  const bd=document.getElementById('mbd');
-  // Stop any playing media
-  const oldV=bd.querySelector('video'),oldA=bd.querySelector('audio');
-  if(oldV)oldV.pause();if(oldA)oldA.pause();
-  // Revoke old blob URLs from mbd (NOT the cached ourl)
-  const oldIframe=bd.querySelector('iframe[data-tmp]');
-  if(oldIframe&&oldIframe.src.startsWith('blob:'))URL.revokeObjectURL(oldIframe.src);
-  bd.innerHTML='';
-
-  const t=f.type||gtype(f.name);
-  const extL=(f.name.split('.').pop()||'').toLowerCase();
-
-  if(t==='image'){
-    if(!f.ourl)f.ourl=URL.createObjectURL(f.file);
-    const wrap=document.createElement('div');
-    wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-height:65vh;overflow:auto;padding:8px';
-    const img=document.createElement('img');
-    img.src=f.ourl;img.alt=f.name;
-    img.style.cssText='max-width:100%;max-height:60vh;border-radius:9px;object-fit:contain;cursor:zoom-in;transition:transform .2s';
-    img.title='Click to toggle zoom';
-    let zoomed=false;
-    img.onclick=()=>{zoomed=!zoomed;img.style.transform=zoomed?'scale(1.8)':'scale(1)';img.style.cursor=zoomed?'zoom-out':'zoom-in'};
-    img.onerror=()=>{wrap.innerHTML='<span class="bigicon">🖼️</span><div class="fdtxt">Could not load image</div>'};
-    wrap.appendChild(img);
-    // Image meta
-    img.onload=()=>{
-      const meta=document.createElement('div');
-      meta.style.cssText='font-size:10px;color:var(--muted);font-family:"JetBrains Mono",monospace';
-      meta.textContent=`${img.naturalWidth} × ${img.naturalHeight}px`;
-      wrap.appendChild(meta);
-    };
-    bd.appendChild(wrap);
-
-  }else if(t==='video'){
-    if(!f.ourl)f.ourl=URL.createObjectURL(f.file);
-    const wrap=document.createElement('div');
-    wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;padding:10px';
-    const v=document.createElement('video');
-    v.src=f.ourl;v.controls=true;v.autoplay=false;
-    v.style.cssText='max-width:100%;max-height:58vh;border-radius:9px;background:#000;width:100%';
-    v.onerror=()=>{wrap.innerHTML='<span class="bigicon">🎬</span><div class="fdtxt">Video format not supported by browser</div>'};
-    // Duration badge
-    v.onloadedmetadata=()=>{
-      const dur=document.createElement('div');
-      dur.style.cssText='font-size:10px;color:var(--muted);font-family:"JetBrains Mono",monospace';
-      const s=Math.round(v.duration);
-      dur.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')} · ${v.videoWidth}×${v.videoHeight}`;
-      wrap.appendChild(dur);
-    };
-    wrap.appendChild(v);
-    bd.appendChild(wrap);
-
-  }else if(t==='audio'){
-    if(!f.ourl)f.ourl=URL.createObjectURL(f.file);
-    const wrap=document.createElement('div');
-    wrap.style.cssText='text-align:center;width:100%;padding:28px 24px';
-    const iconColor={mp3:'#ff3e6c',wav:'#06b6d4',flac:'#10b981',aac:'#f59e0b',ogg:'#7c3aed',m4a:'#ec4899',opus:'#8b5cf6'};
-    const col=iconColor[extL]||'#7c3aed';
-    wrap.innerHTML=`
-      <div style="width:90px;height:90px;border-radius:50%;background:${col}22;border:2px solid ${col}44;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:40px">🎵</div>
-      <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--text)">${esc(f.name)}</div>
-      <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:18px">${fsz(f.size)} · ${extL.toUpperCase()}</div>`;
-    const a=document.createElement('audio');
-    a.src=f.ourl;a.controls=true;
-    a.style.cssText='width:100%;max-width:380px;border-radius:8px';
-    a.onerror=()=>{const err=document.createElement('div');err.style.cssText='color:var(--warn);font-size:11px;margin-top:8px';err.textContent='Format not supported by browser';wrap.appendChild(err);};
-    // Duration
-    a.onloadedmetadata=()=>{
-      const s=Math.round(a.duration);
-      const dur=wrap.querySelector('.adur');
-      if(dur)dur.textContent+=` · ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-    };
-    wrap.appendChild(a);
-    bd.appendChild(wrap);
-
-  }else if(extL==='pdf'){
-    // PDF viewer via browser iframe
-    if(!f.ourl)f.ourl=URL.createObjectURL(f.file);
-    const wrap=document.createElement('div');
-    wrap.style.cssText='width:100%;height:60vh;display:flex;flex-direction:column';
-    const iframe=document.createElement('iframe');
-    iframe.src=f.ourl+'#toolbar=1&navpanes=0';
-    iframe.dataset.tmp='1';
-    iframe.style.cssText='width:100%;flex:1;border:none;border-radius:8px;background:#fff';
-    iframe.title=f.name;
-    // Fallback note
-    const note=document.createElement('div');
-    note.style.cssText='font-size:9px;color:var(--muted);text-align:center;margin-top:6px;font-family:"JetBrains Mono",monospace';
-    note.textContent='If PDF does not display, use ⬇ Download to open externally';
-    wrap.appendChild(iframe);wrap.appendChild(note);
-    bd.appendChild(wrap);
-
-  }else if(['svg'].includes(extL)){
-    // SVG inline render
-    const r=new FileReader();
-    r.onload=e=>{
-      const wrap=document.createElement('div');
-      wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;padding:16px';
-      const svgWrap=document.createElement('div');
-      svgWrap.style.cssText='max-width:100%;max-height:55vh;overflow:auto;background:var(--surface3);border-radius:9px;padding:16px';
-      svgWrap.innerHTML=e.target.result;
-      const svgEl=svgWrap.querySelector('svg');
-      if(svgEl){svgEl.style.maxWidth='100%';svgEl.style.maxHeight='50vh';}
-      wrap.appendChild(svgWrap);bd.appendChild(wrap);
-    };r.readAsText(f.file);
-
-  }else{
-    // Generic / text / code
-    const wrap=document.createElement('div');
-    wrap.style.cssText='text-align:center;width:100%;padding:16px';
-    wrap.innerHTML=`<span class="bigicon">${gicon(t,f.name)}</span><div class="fdtxt"><strong style="color:var(--text)">${esc(f.name)}</strong><br>${fsz(f.size)} · ${fdate(f.lastModified)}<br><span style="color:var(--muted)">${esc(f.path)}</span></div>`;
-
-    const txtExts=['txt','md','json','xml','csv','html','css','js','ts','py','java','c','cpp','h','log','yaml','yml','sh','sql','rb','go','php','ini','conf','toml','env','gitignore','lock','scss','sass','vue','jsx','tsx','rs','kt','swift'];
-    if(txtExts.includes(extL)){
-      const loadNote=document.createElement('div');
-      loadNote.style.cssText='font-size:10px;color:var(--accent2);font-family:"JetBrains Mono",monospace;margin:8px 0 4px';
-      loadNote.textContent='Loading preview…';
-      wrap.appendChild(loadNote);
-
-      const r=new FileReader();
-      r.onload=e=>{
-        loadNote.remove();
-        const content=e.target.result;
-        const lines=content.split('\n');
-        const lineCount=lines.length;
-        const charCount=content.length;
-
-        const meta=document.createElement('div');
-        meta.style.cssText='font-size:9px;color:var(--muted);font-family:"JetBrains Mono",monospace;margin:4px 0 8px';
-        meta.textContent=`${lineCount.toLocaleString()} lines · ${charCount.toLocaleString()} chars`;
-        wrap.appendChild(meta);
-
-        const pre=document.createElement('pre');
-        pre.style.cssText='background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:14px;max-height:300px;overflow:auto;font-family:"JetBrains Mono",monospace;font-size:10px;text-align:left;white-space:pre;word-break:normal;color:var(--text2);margin-top:4px;width:100%;line-height:1.5';
-        // Show with line numbers for code files
-        const codeExts=['js','ts','py','java','c','cpp','h','css','html','json','xml','yaml','yml','sh','sql','rb','go','php','rs','kt','swift','tsx','jsx','vue'];
-        if(codeExts.includes(extL)&&lineCount<500){
-          const maxLines=Math.min(lines.length,200);
-          const numbered=lines.slice(0,maxLines).map((l,i)=>`<span style="color:var(--muted);user-select:none;margin-right:14px;display:inline-block;min-width:28px;text-align:right">${i+1}</span>${esc(l)}`).join('\n');
-          pre.innerHTML=numbered+(lineCount>200?`\n<span style="color:var(--muted)">… ${lineCount-200} more lines</span>`:'');
-        }else{
-          pre.textContent=content.slice(0,8000)+(charCount>8000?'\n…(truncated — download to view full)':'');
+        function clearKey() {
+            localStorage.removeItem(STORAGE_KEY);
+            document.getElementById('apiKey').value = '';
         }
-        wrap.appendChild(pre);
-      };
-      r.onerror=()=>{loadNote.textContent='Could not read file content';};
-      r.readAsText(f.file);
-    }else{
-      // Non-previewable: show instructions
-      const hint=document.createElement('div');
-      hint.style.cssText='margin-top:14px;font-size:11px;color:var(--text2);background:var(--surface3);border-radius:8px;padding:12px 16px;display:inline-block;line-height:1.6';
-      hint.innerHTML=`<strong style="color:var(--text)">Preview not available for .${extL} files</strong><br>Use the ⬇ Download button to open this file externally.`;
-      wrap.appendChild(hint);
-    }
-    bd.appendChild(wrap);
-  }
 
-  document.getElementById('mprev').disabled=mfi<=0;
-  document.getElementById('mnext').disabled=mfi>=sorted.length-1;
-  document.getElementById('mni').textContent=`${mfi+1} / ${sorted.length}`;
-  const st=fst[f.path]||null;
-  document.getElementById('mkbtn').textContent=st==='keep'?'✓ Kept':'✓ Keep';
-  document.getElementById('mdbtn').textContent=st==='delete'?'🗑 Marked':'🗑 Mark Delete';
-  document.getElementById('mbg').classList.add('open');
-}
+        function setStatus(msg, showLoader = false) {
+            const box = document.getElementById('statusBox');
+            box.classList.remove('hidden');
+            document.getElementById('statusText').innerText = msg;
+            document.getElementById('loader').classList.toggle('hidden', !showLoader);
+        }
 
-function downloadCurFile(){
-  if(!curModalFile)return;
-  const a=document.createElement('a');
-  a.href=curModalFile.ourl||URL.createObjectURL(curModalFile.file);
-  a.download=curModalFile.name;
-  a.click();
-  toast('⬇','Downloading '+curModalFile.name);
-}
-function closeMod(e){
-  if(!e||e.target===document.getElementById('mbg')){
-    document.getElementById('mbg').classList.remove('open');
-    const v=document.querySelector('#mbd video'),a=document.querySelector('#mbd audio');
-    if(v)v.pause();if(a)a.pause();
-  }
-}
-function mnav(d){
-  const g=groups[mgi];if(!g)return;
-  const sorted=[...g.files].sort((a,b)=>b.lastModified-a.lastModified);
-  const ni=mfi+d;
-  if(ni>=0&&ni<sorted.length){
-    const v=document.querySelector('#mbd video'),a=document.querySelector('#mbd audio');
-    if(v)v.pause();if(a)a.pause();
-    mfi=ni;showMod();
-  }
-}
-function mact(action){
-  const g=groups[mgi];if(!g)return;
-  const sorted=[...g.files].sort((a,b)=>b.lastModified-a.lastModified);
-  const f=sorted[mfi];if(!f)return;
-  const oi=groups[mgi].files.indexOf(f);
-  mark(f.path,action,mgi,oi);
-  showMod();
-}
+        async function selectFolder() {
+            try {
+                // Browser security check for Directory Picker
+                if (!window.showDirectoryPicker) {
+                    alert("Your browser does not support the File System Access API. Please use Chrome, Edge, or Opera on Desktop.");
+                    return;
+                }
 
-// ════════════════════════════════════════════
-// SELECTION
-// ════════════════════════════════════════════
-function tsel(cb,path){if(cb.checked)sel.add(path);else sel.delete(path);updCount();}
-function selAll(){groups.forEach(g=>g.files.forEach(f=>sel.add(f.path)));document.querySelectorAll('.fcb').forEach(cb=>cb.checked=true);updCount();}
-function selNone(){sel.clear();document.querySelectorAll('.fcb').forEach(cb=>cb.checked=false);updCount();}
-function selInv(){
-  groups.forEach(g=>g.files.forEach(f=>{if(sel.has(f.path))sel.delete(f.path);else sel.add(f.path);}));
-  document.querySelectorAll('.fcb').forEach(cb=>cb.checked=!cb.checked);updCount();
-}
-function gsa(gi,e){e.stopPropagation();groups[gi].files.forEach(f=>sel.add(f.path));document.querySelectorAll(`#grp_${gi} .fcb`).forEach(cb=>cb.checked=true);updCount();}
-function gsn(gi,e){e.stopPropagation();groups[gi].files.forEach(f=>sel.delete(f.path));document.querySelectorAll(`#grp_${gi} .fcb`).forEach(cb=>cb.checked=false);updCount();}
+                const dirHandle = await window.showDirectoryPicker();
+                resetApp(false);
+                setStatus("Analyzing folder structure...", true);
+                duplicateGroups = {};
+                await scanFolder(dirHandle);
+                renderResults();
+            } catch (err) {
+                if(err.name !== 'AbortError') {
+                    console.error(err);
+                    setStatus("Error: Permission denied or folder access failed.");
+                }
+            }
+        }
 
-// ════════════════════════════════════════════
-// MARK KEEP / DELETE
-// ════════════════════════════════════════════
-function mark(path,action,gi,fi){
-  fst[path]=fst[path]===action?null:action;
-  refreshRow(gi,fi,path);
-  updCount();
-  // Auto-remove from dupe list when marked as deleted
-  if(fst[path]==='delete') scheduleCleanup(path);
-  else if(fst[path]===null) cancelCleanup(path);
-}
+        async function scanFolder(dirHandle, path = "") {
+            for await (const entry of dirHandle.values()) {
+                const fullPath = path ? `${path}/${entry.name}` : entry.name;
+                if (entry.kind === 'file') {
+                    const file = await entry.getFile();
+                    const hash = await generateSpeedHash(file);
+                    
+                    if (!duplicateGroups[hash]) duplicateGroups[hash] = [];
+                    
+                    let preview = null;
+                    if (file.type.startsWith('image/')) {
+                        preview = URL.createObjectURL(file);
+                    }
+                    
+                    duplicateGroups[hash].push({
+                        name: entry.name,
+                        path: fullPath,
+                        size: file.size,
+                        preview: preview,
+                        modified: new Date(file.lastModified).toLocaleDateString()
+                    });
+                } else if (entry.kind === 'directory') {
+                    await scanFolder(entry, fullPath);
+                }
+            }
+        }
 
-// Cleanup timers — short delay so user sees the mark before it disappears
-const _cleanupTimers={};
-function scheduleCleanup(path){
-  clearTimeout(_cleanupTimers[path]);
-  _cleanupTimers[path]=setTimeout(()=>removeFileFromGroups(path),1200);
-}
-function cancelCleanup(path){
-  clearTimeout(_cleanupTimers[path]);
-  delete _cleanupTimers[path];
-}
+        async function generateSpeedHash(file) {
+            // Hash optimization: combine file size + first 16KB of binary data
+            const chunk = file.slice(0, 16384);
+            const buffer = await chunk.arrayBuffer();
+            const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return `${file.size}-${hashArray.map(b => b.toString(16).padStart(2, '0')).join('')}`;
+        }
 
-function removeFileFromGroups(path){
-  let changed=false;
-  // Remove the file from every group it appears in
-  groups.forEach(g=>{
-    const before=g.files.length;
-    g.files=g.files.filter(f=>f.path!==path);
-    if(g.files.length!==before) changed=true;
-  });
-  // Drop groups that now have only 1 file (no longer a duplicate)
-  const before=groups.length;
-  groups=groups.filter(g=>g.files.length>1);
-  const removed=before-groups.length;
+        function renderResults() {
+            const grid = document.getElementById('resultsGrid');
+            grid.innerHTML = '';
+            let groupCount = 0;
+            
+            Object.entries(duplicateGroups).forEach(([hash, files]) => {
+                if (files.length > 1) {
+                    groupCount++;
+                    const groupContainer = document.createElement('div');
+                    groupContainer.className = "duplicate-group";
+                    
+                    const listHtml = files.map(f => `
+                        <div class="file-card">
+                            <input type="checkbox" onchange="toggleFile('${f.path}', this.checked)">
+                            <div class="preview-box">
+                                ${f.preview ? `<img src="${f.preview}" class="preview-img">` : `<span style="font-size:10px; font-weight:bold; color:var(--text-muted)">${f.name.split('.').pop().toUpperCase()}</span>`}
+                            </div>
+                            <div style="flex:1; min-width:0">
+                                <p style="margin:0; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 0.9rem;">${f.name}</p>
+                                <p style="margin:0.2rem 0 0 0; font-size:0.7rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${f.path}</p>
+                                <p style="margin:0.2rem 0 0 0; font-size:0.65rem; color:var(--accent-blue);">Size: ${(f.size/1024).toFixed(2)} KB</p>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    groupContainer.innerHTML = `<div style="font-size:10px; color:var(--accent-red); font-weight:bold; letter-spacing: 1px; margin-bottom:10px;">DUPLICATE SET ${groupCount}</div>${listHtml}`;
+                    grid.appendChild(groupContainer);
+                }
+            });
 
-  // Clean up sel + fst
-  sel.delete(path);
-  delete fst[path];
-  delete _cleanupTimers[path];
+            if (groupCount > 0) {
+                setStatus(`Scan complete. Found ${groupCount} duplicate sets.`);
+                document.getElementById('actionBar').classList.remove('hidden');
+            } else {
+                setStatus("Folder scan finished. No duplicates found.");
+                grid.innerHTML = `<div class="empty-state">No duplicates found in this folder.</div>`;
+            }
+        }
 
-  if(changed){
-    // Animate out the row first, then re-render
-    document.querySelectorAll('.fr').forEach(row=>{
-      if(row.dataset.path===path){
-        row.style.transition='all .35s ease';
-        row.style.opacity='0';
-        row.style.transform='translateX(24px)';
-        row.style.maxHeight=row.offsetHeight+'px';
-        setTimeout(()=>{row.style.maxHeight='0';row.style.padding='0';row.style.margin='0';row.style.overflow='hidden';},350);
-      }
-    });
-    setTimeout(()=>{
-      renderGroups();
-      updCount();
-      if(removed>0) toast('🗑',`Removed — ${removed} group${removed>1?'s':''} resolved`);
-      else toast('🗑','File removed from duplicate list');
-    },700);
-  }
-}
-function refreshRow(gi,fi,path){
-  const row=document.getElementById(`fr_${gi}_${fi}`);if(!row)return;
-  const st=fst[path]||null;
-  row.className='fr'+(st==='keep'?' sk':st==='delete'?' sd':'');
-  const tag=row.querySelector('.stag');
-  if(tag){tag.className='stag'+(st==='keep'?' sk-tag':st==='delete'?' sd-tag':' sn-tag');tag.textContent=st==='keep'?'✓ KEEP':st==='delete'?'🗑 DEL':'—';}
-}
-function refreshAll(path){
-  groups.forEach((g,gi)=>{
-    const sorted=[...g.files].sort((a,b)=>b.lastModified-a.lastModified);
-    sorted.forEach((f,fi)=>{if(f.path===path)refreshRow(gi,fi,path);});
-  });
-}
-function bulkKeep(){sel.forEach(p=>{fst[p]='keep';refreshAll(p);});updCount();toast('✓',`Marked ${sel.size} as keep`);}
-function bulkDel(){
-  const paths=[...sel];
-  paths.forEach(p=>{fst[p]='delete';refreshAll(p);});
-  updCount();
-  toast('🗑',`Marked ${paths.length} for deletion — removing from list…`);
-  // Stagger removals so animation isn't chaotic
-  paths.forEach((p,i)=>setTimeout(()=>removeFileFromGroups(p), 800+i*120));
-}
-function bulkClear(){sel.forEach(p=>{fst[p]=null;cancelCleanup(p);refreshAll(p);});updCount();toast('✕','Cleared marks on selected');}
-function gma(gi,action,e){
-  e.stopPropagation();
-  const sorted=[...groups[gi].files].sort((a,b)=>b.lastModified-a.lastModified);
-  sorted.forEach((f,fi)=>{fst[f.path]=action;refreshRow(gi,fi,f.path);});
-  updCount();
-  if(action==='delete'){
-    toast('🗑',`Marked group for deletion — removing…`);
-    sorted.forEach((f,i)=>setTimeout(()=>removeFileFromGroups(f.path), 800+i*100));
-  }
-}
-function gak(gi,e){
-  e.stopPropagation();
-  const sorted=[...groups[gi].files].sort((a,b)=>b.lastModified-a.lastModified);
-  sorted.forEach((f,fi)=>{fst[f.path]=fi===0?'keep':'delete';refreshRow(gi,fi,f.path);});
-  updCount();toast('⚡','Auto-kept newest in group');
-}
-function autoKeep(){
-  groups.forEach((g,gi)=>{
-    const s=[...g.files].sort((a,b)=>b.lastModified-a.lastModified);
-    s.forEach((f,fi)=>{fst[f.path]=fi===0?'keep':'delete';refreshAll(f.path);});
-  });
-  updCount();
-  toast('⚡',`Kept newest in each group — ${Object.values(fst).filter(v=>v==='delete').length} marked for deletion`);
-}
+        function toggleFile(path, isChecked) {
+            if (isChecked) selectedPaths.add(path);
+            else selectedPaths.delete(path);
+            document.getElementById('selectedCount').innerText = selectedPaths.size;
+        }
 
-// ════════════════════════════════════════════
-// EXPORT SCRIPTS
-// ════════════════════════════════════════════
-function toggleExportMenu(){
-  const m=document.getElementById('exportMenu');
-  m.style.display=m.style.display==='none'?'block':'none';
-  // Close on outside click
-  if(m.style.display==='block'){
-    setTimeout(()=>document.addEventListener('click',closeExportMenu,{once:true}),50);
-  }
-}
-function closeExportMenu(){document.getElementById('exportMenu').style.display='none';}
+        function resetApp(full = true) {
+            selectedPaths.clear();
+            document.getElementById('selectedCount').innerText = '0';
+            document.getElementById('resultsGrid').innerHTML = '';
+            document.getElementById('resultsGrid').innerHTML = `<div id="emptyState" class="empty-state"><p>Select a folder to begin scanning.</p></div>`;
+            document.getElementById('actionBar').classList.add('hidden');
+            if(full) document.getElementById('statusBox').classList.add('hidden');
+        }
 
-function validateBasePath(){
-  const v=document.getElementById('basePath').value.trim();
-  const w=document.getElementById('basePathWarn');
-  if(w) w.style.display=v?'none':'block';
-}
+        async function processAI() {
+            const apiKey = document.getElementById('apiKey').value;
+            if (!apiKey) return alert("Please enter your Groq API Key.");
+            if (selectedPaths.size === 0) return alert("Please select at least one duplicate file to remove.");
+            
+            const type = document.getElementById('scriptType').value;
+            const btn = document.getElementById('aiBtn');
+            btn.disabled = true;
+            setStatus(`AI is generating your ${type.toUpperCase()} deletion script...`, true);
+            
+            const prompt = `Task: Create a professional script to delete duplicate files.
+            Format: ${type}
+            Logic: Set a variable DRY_RUN=true by default. If true, print names of files to delete. If false, perform the deletion.
+            Files to include in script: ${JSON.stringify(Array.from(selectedPaths))}
+            
+            Output ONLY the script code. No explanation or markers.`;
+            
+            try {
+                const code = await fetchGroqWithFallback(prompt);
+                const blob = new Blob([code], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `cleanup_duplicates.${type}`;
+                a.click();
+                setStatus("Script generated and downloaded!", false);
+            } catch (err) {
+                setStatus(`AI Generation Error: ${err.message}`, false);
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+            }
+        }
 
-function buildAbsPath(base, relPath){
-  // Detect Windows path (starts with drive letter or \\)
-  const isWin=base.match(/^[A-Za-z]:\\/) || base.startsWith('\\\\');
-  // Remove the top-level folder from relPath since base already is that folder
-  // e.g. relPath = "Memories in my life/subfolder/file.mp4"
-  //      base    = "C:\Users\You\Desktop\Memories in my life"
-  // Strip the first segment of relPath (it's the same as the folder name in base)
-  const parts=relPath.replace(/\\/g,'/').split('/');
-  const withoutRoot=parts.slice(1).join(isWin?'\\':'/'); // drop folder root segment
-  const sep=isWin?'\\':'/';
-  // Clean trailing separator from base
-  const cleanBase=base.replace(/[/\\]+$/,'');
-  return withoutRoot ? cleanBase+sep+withoutRoot : cleanBase+sep+parts[parts.length-1];
-}
-
-function doExport(fmt){
-  document.getElementById('exportMenu').style.display='none';
-
-  const td=[...sel];
-  if(!td.length){toast('ℹ️','Check some files first — tick their checkboxes then export');return;}
-
-  const base=document.getElementById('basePath').value.trim();
-  if(!base){
-    document.getElementById('exportMenu').style.display='block';
-    document.getElementById('basePathWarn').style.display='block';
-    document.getElementById('basePath').focus();
-    toast('⚠️','Enter your folder path first!');
-    return;
-  }
-
-  const isWin=base.match(/^[A-Za-z]:\\/) || base.startsWith('\\\\');
-  const sep=isWin?'\\':'/';
-
-  // Build absolute paths
-  const absPaths=td.map(p=>buildAbsPath(base,p));
-
-  const now=new Date().toLocaleString();
-  const count=absPaths.length;
-  let content='',filename='',mime='text/plain';
-
-  if(fmt==='sh'){
-    filename='dupehunter-delete.sh';
-    content=`#!/usr/bin/env bash
-# ╔══════════════════════════════════════════╗
-# ║  DupeHunter — Delete Script              ║
-# ║  Generated: ${now.padEnd(28)}║
-# ║  Files: ${String(count).padEnd(33)}║
-# ╚══════════════════════════════════════════╝
-# HOW TO RUN:
-#   chmod +x dupehunter-delete.sh && ./dupehunter-delete.sh
-# Files go to TRASH — recoverable.
-
-trash_file() {
-  if command -v trash &>/dev/null; then trash "$1"
-  elif [[ "$OSTYPE" == "darwin"* ]]; then
-    osascript -e "tell app \\"Finder\\" to delete POSIX file \\"$1\\"" 2>/dev/null || mv "$1" ~/.Trash/
-  else
-    gio trash "$1" 2>/dev/null || mv "$1" ~/.local/share/Trash/files/ 2>/dev/null || rm -i "$1"
-  fi
-}
-
-echo "🗑  DupeHunter — Deleting ${count} files..."
-DELETED=0; SKIPPED=0
-
-${absPaths.map((p,i)=>{
-  const safe=p.replace(/'/g,"'\\''");
-  return `# [${i+1}/${count}]
-if [ -f '${safe}' ]; then
-  echo "  [${i+1}/${count}] Deleting: ${safe}"
-  trash_file '${safe}' && DELETED=$((DELETED+1))
-else
-  echo "  [${i+1}/${count}] Skipped (not found): ${safe}"
-  SKIPPED=$((SKIPPED+1))
-fi`;}).join('\n\n')}
-
-echo ""
-echo "✅  Done! Deleted: $DELETED  Skipped: $SKIPPED"
-`;
-
-  }else if(fmt==='ps1'){
-    filename='dupehunter-delete.ps1';
-    content=`# ================================================
-# DupeHunter — PowerShell Delete Script
-# Generated: ${now}
-# Base folder: ${base}
-# Files: ${count}
-# ================================================
-# HOW TO RUN: Right-click → "Run with PowerShell"
-# Files go to Recycle Bin — recoverable.
-# If blocked: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-
-function Remove-ToRecycleBin {
-    param([string]$FilePath)
-    $shell = New-Object -ComObject Shell.Application
-    if (Test-Path -LiteralPath $FilePath) {
-        $item = $shell.Namespace(0).ParseName($FilePath)
-        if ($item) { $item.InvokeVerb("delete"); return $true }
-    }
-    return $false
-}
-
-$deleted = 0; $skipped = 0
-Write-Host ""
-Write-Host "DupeHunter -- Deleting ${count} files to Recycle Bin..." -ForegroundColor Cyan
-Write-Host ""
-
-${absPaths.map((p,i)=>{
-  const safe=p.replace(/"/g,'`"').replace(/'/g,"'");
-  return `# [${i+1}/${count}]
-$f = "${safe}"
-Write-Host "  [${i+1}/${count}] $f" -NoNewline
-if (Remove-ToRecycleBin $f) { Write-Host " -> DELETED" -ForegroundColor Green; $deleted++ }
-else { Write-Host " -> SKIPPED (not found)" -ForegroundColor Yellow; $skipped++ }`;}).join('\n\n')}
-
-Write-Host ""
-Write-Host "Done! Deleted: $deleted   Skipped: $skipped" -ForegroundColor Cyan
-Write-Host "Check your Recycle Bin to recover files." -ForegroundColor Gray
-Read-Host "Press Enter to close"
-`;
-
-  }else if(fmt==='bat'){
-    filename='dupehunter-delete.bat';
-    content=`@echo off
-:: ================================================
-:: DupeHunter — Batch Delete Script
-:: Generated: ${now}
-:: Base folder: ${base}
-:: Files: ${count}
-:: WARNING: PERMANENT DELETE (no Recycle Bin)
-:: Use .ps1 for Recycle Bin support.
-:: HOW TO RUN: Double-click this file
-:: ================================================
-
-setlocal enabledelayedexpansion
-set DELETED=0
-set SKIPPED=0
-
-echo.
-echo DupeHunter -- Deleting ${count} files...
-echo WARNING: Files will be PERMANENTLY deleted!
-echo Base: ${base}
-echo.
-pause
-
-${absPaths.map((p,i)=>{
-  const safe=p.replace(/"/g,'');
-  return `echo   [${i+1}/${count}] ${safe}
-if exist "${safe}" (
-  del /f /q "${safe}"
-  echo     ^> Deleted.
-  set /a DELETED+=1
-) else (
-  echo     ^> Skipped: not found.
-  set /a SKIPPED+=1
-)`;}).join('\n\n')}
-
-echo.
-echo Done^^!  Deleted: %DELETED%   Skipped: %SKIPPED%
-echo.
-pause
-`;
-
-  }else{
-    filename='dupehunter-delete-list.txt';
-    content=`# DupeHunter — Files to Delete
-# Generated: ${now}
-# Base folder: ${base}
-# Total: ${count} files
-# ─────────────────────────────────────────
-
-${absPaths.join('\n')}
-`;
-  }
-
-  const blob=new Blob([content],{type:mime});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=filename;a.click();
-  URL.revokeObjectURL(url);
-  toast('📦',`Downloaded ${filename} with ${count} absolute paths`);
-}
-
-// ════════════════════════════════════════════
-// COUNTERS & FILTER
-// ════════════════════════════════════════════
-function updCount(){
-  const sn=sel.size,dn=Object.values(fst).filter(v=>v==='delete').length,kn=Object.values(fst).filter(v=>v==='keep').length;
-  document.getElementById('selc').textContent=sn;
-  document.getElementById('bsel').textContent=sn;
-  document.getElementById('bdel').textContent=dn;
-  document.getElementById('bkp').textContent=kn;
-  // Export button enabled when there are checked (selected) files
-  const mb=document.getElementById('mdb');
-  if(mb){
-    mb.disabled=sn===0;
-    mb.textContent=sn>0?`📦 Export ${sn} Checked ▾`:'📦 Export Script ▾';
-  }
-}
-function sf(el){document.querySelectorAll('.fb .chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');curFilter=el.dataset.f;renderGroups();}
-function tgrp(gi){document.getElementById('grp_'+gi)?.classList.toggle('open');}
-
-// ════════════════════════════════════════════
-// UTILS
-// ════════════════════════════════════════════
-function sp(pct,s,f){
-  document.getElementById('ppct').textContent=Math.round(pct)+'%';
-  document.getElementById('pst').textContent=s;
-  document.getElementById('pfl').textContent=f;
-  document.getElementById('pb').style.width=pct+'%';
-  document.getElementById('pc').style.strokeDashoffset=295.3*(1-pct/100);
-}
-function wait(ms){return new Promise(r=>setTimeout(r,ms))}
-function fsz(b){if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(1)+' KB';if(b<1073741824)return (b/1048576).toFixed(1)+' MB';return (b/1073741824).toFixed(2)+' GB';}
-function fdate(ts){return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});}
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-function ea(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
-function gtype(n){
-  const e=(n.split('.').pop()||'').toLowerCase();
-  if(['jpg','jpeg','png','gif','bmp','webp','svg','tiff','heic','avif'].includes(e))return 'image';
-  if(['mp4','mov','avi','mkv','wmv','flv','webm','m4v','ogv'].includes(e))return 'video';
-  if(['mp3','wav','flac','aac','ogg','m4a','wma','opus'].includes(e))return 'audio';
-  if(['pdf','doc','docx','xls','xlsx','ppt','pptx','txt','md','rtf','csv','odt'].includes(e))return 'document';
-  if(['zip','rar','7z','tar','gz','bz2','xz'].includes(e))return 'archive';
-  if(['js','ts','py','java','cpp','c','h','cs','go','rb','php','html','css','json','xml','yaml','yml','sh','sql'].includes(e))return 'code';
-  return 'other';
-}
-function gicon(t,n){
-  if(t==='image')return '🖼️';if(t==='video')return '🎬';if(t==='audio')return '🎵';
-  if(t==='archive')return '🗜️';if(t==='code')return '💻';
-  const e=(n.split('.').pop()||'').toLowerCase();
-  if(e==='pdf')return '📕';if(['doc','docx'].includes(e))return '📄';
-  if(['xls','xlsx'].includes(e))return '📊';if(['ppt','pptx'].includes(e))return '📑';
-  return '📎';
-}
-function toast(icon,msg){
-  const c=document.getElementById('tc');
-  const t=document.createElement('div');t.className='toast';
-  t.innerHTML=`<span>${icon}</span><span>${esc(msg)}</span>`;
-  c.appendChild(t);
-  setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .4s';setTimeout(()=>t.remove(),400);},4500);
-}
-
-document.addEventListener('keydown',e=>{
-  const open=document.getElementById('mbg').classList.contains('open');
-  if(e.key==='Escape')closeMod({target:document.getElementById('mbg')});
-  if(open&&e.key==='ArrowLeft')mnav(-1);
-  if(open&&e.key==='ArrowRight')mnav(1);
-});
-</script>
+        async function fetchGroqWithFallback(prompt, index = 0) {
+            if (index >= MODELS.length) throw new Error("All Groq models failed. Check your API key or connection.");
+            
+            const apiKey = document.getElementById('apiKey').value;
+            try {
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: { 
+                        "Authorization": `Bearer ${apiKey}`, 
+                        "Content-Type": "application/json" 
+                    },
+                    body: JSON.stringify({ 
+                        model: MODELS[index], 
+                        messages: [
+                            { role: "system", content: "You are a code generation assistant. Return raw script code only." },
+                            { role: "user", content: prompt }
+                        ],
+                        temperature: 0.1
+                    })
+                });
+                
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error?.message || "Model error");
+                }
+                
+                const data = await res.json();
+                let content = data.choices[0].message.content;
+                // Clean up any markdown code blocks if the AI included them
+                return content.replace(/```[a-z]*\n/gi, '').replace(/```/g, '').trim();
+            } catch (e) {
+                console.warn(`Model ${MODELS[index]} failed, trying next available model...`);
+                return fetchGroqWithFallback(prompt, index + 1);
+            }
+        }
+    </script>
 </body>
 </html>
