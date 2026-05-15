@@ -313,7 +313,6 @@
 
         async function selectFolder() {
             try {
-                // Browser security check for Directory Picker
                 if (!window.showDirectoryPicker) {
                     alert("Your browser does not support the File System Access API. Please use Chrome, Edge, or Opera on Desktop.");
                     return;
@@ -344,7 +343,12 @@
                     
                     let preview = null;
                     if (file.type.startsWith('image/')) {
-                        preview = URL.createObjectURL(file);
+                        // Using FileReader to get Base64 for better compatibility
+                        preview = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(file);
+                        });
                     }
                     
                     duplicateGroups[hash].push({
@@ -361,7 +365,6 @@
         }
 
         async function generateSpeedHash(file) {
-            // Hash optimization: combine file size + first 16KB of binary data
             const chunk = file.slice(0, 16384);
             const buffer = await chunk.arrayBuffer();
             const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
@@ -485,7 +488,6 @@
                 
                 const data = await res.json();
                 let content = data.choices[0].message.content;
-                // Clean up any markdown code blocks if the AI included them
                 return content.replace(/```[a-z]*\n/gi, '').replace(/```/g, '').trim();
             } catch (e) {
                 console.warn(`Model ${MODELS[index]} failed, trying next available model...`);
