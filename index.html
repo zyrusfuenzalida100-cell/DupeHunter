@@ -6,29 +6,30 @@
     <title>AI Duplicate Janitor</title>
     <style>
         :root {
-            --bg-dark: #111827;
-            --bg-card: #1f2937;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --accent-blue: #2563eb;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #3b82f6;
             --accent-red: #ef4444;
-            --accent-green: #10b981;
-            --border-color: #374151;
+            --accent-green: #22c55e;
+            --accent-purple: #a855f7;
+            --border-color: #334155;
         }
 
         body {
             background-color: var(--bg-dark);
             color: var(--text-main);
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             margin: 0;
             min-height: 100vh;
-            padding-bottom: 120px;
+            padding-bottom: 140px;
         }
 
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 1.5rem;
         }
 
         .main-header {
@@ -42,109 +43,74 @@
             border-radius: 1rem;
             border: 1px solid var(--border-color);
             margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
 
-        @media (min-width: 768px) {
-            .main-header { flex-direction: row; }
-        }
+        @media (min-width: 768px) { .main-header { flex-direction: row; } }
 
-        .title {
-            margin: 0;
-            font-size: 1.8rem;
-            background: linear-gradient(to right, #60a5fa, #f87171);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+        .title { margin: 0; font-size: 1.75rem; font-weight: 800; color: white; letter-spacing: -0.025em; }
+        .subtitle { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; }
 
-        .subtitle { color: var(--text-muted); font-size: 0.875rem; margin: 0.2rem 0 0 0; }
+        .controls { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; max-width: 400px; }
 
-        .controls { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
-        @media (min-width: 768px) { .controls { width: auto; } }
-
-        .input-group { position: relative; display: flex; }
+        .input-group { position: relative; display: flex; width: 100%; }
         .api-input {
             width: 100%;
-            background: #374151;
+            background: #0f172a;
             border: 1px solid var(--border-color);
             border-radius: 0.5rem;
             padding: 0.6rem 1rem;
             color: white;
             font-size: 0.9rem;
+            outline: none;
         }
-
-        .clear-btn {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 0.7rem;
-            background: #4b5563;
-            border: none;
-            color: white;
-            padding: 0.3rem 0.6rem;
-            border-radius: 0.25rem;
-            cursor: pointer;
-        }
+        .api-input:focus { border-color: var(--accent-blue); }
 
         .button-row { display: flex; gap: 0.5rem; }
         .primary-btn {
             background: var(--accent-blue);
             color: white;
             border: none;
-            padding: 0.7rem 1.5rem;
+            padding: 0.75rem 1.25rem;
             border-radius: 0.5rem;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
+            transition: all 0.2s;
         }
-
-        .icon-btn {
-            background: #374151;
-            border: none;
-            color: white;
-            padding: 0.7rem;
-            border-radius: 0.5rem;
-            cursor: pointer;
-        }
+        .primary-btn:hover { background: #2563eb; transform: translateY(-1px); }
 
         .status-box {
             padding: 1.25rem;
-            background: rgba(31, 41, 55, 0.5);
+            background: #1e293b;
             border: 1px solid var(--border-color);
             border-radius: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .status-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.75rem;
+            margin-bottom: 2rem;
         }
 
         .progress-container {
             width: 100%;
-            height: 8px;
-            background: #374151;
-            border-radius: 4px;
+            height: 10px;
+            background: #0f172a;
+            border-radius: 5px;
             overflow: hidden;
-            margin-bottom: 0.5rem;
+            margin: 10px 0;
         }
 
         .progress-bar {
             height: 100%;
             width: 0%;
-            background: linear-gradient(to right, var(--accent-blue), var(--accent-green));
-            transition: width 0.1s ease-out;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+            transition: width 0.3s ease;
         }
 
         .current-path {
-            font-family: monospace;
-            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
             color: var(--text-muted);
             white-space: nowrap;
             overflow: hidden;
@@ -152,563 +118,425 @@
             display: block;
         }
 
-        .loader {
-            width: 16px;
-            height: 16px;
-            border: 2px solid var(--accent-blue);
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        .results-section { margin-bottom: 2rem; }
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .results-grid { display: grid; gap: 1.5rem; }
-        .empty-state { padding: 5rem 0; text-align: center; opacity: 0.5; }
 
         .duplicate-group {
             background: var(--bg-card);
-            padding: 1.25rem;
-            border-radius: 1rem;
-            border-left: 5px solid var(--accent-red);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .group-header {
+            padding: 0.75rem 1rem;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .file-card {
             display: flex;
             align-items: center;
             gap: 1rem;
-            padding: 0.75rem;
-            background: rgba(0,0,0,0.2);
-            border-radius: 0.75rem;
-            margin-top: 0.75rem;
-            border: 1px solid rgba(255,255,255,0.05);
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
+        .file-card:last-child { border-bottom: none; }
 
         .preview-box {
-            width: 80px;
-            height: 80px;
-            background: #111827;
+            width: 90px;
+            height: 90px;
+            background: #0f172a;
             border-radius: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             overflow: hidden;
             flex-shrink: 0;
             border: 1px solid var(--border-color);
             position: relative;
         }
-
         .preview-img, .preview-video { width: 100%; height: 100%; object-fit: cover; }
-        
-        .video-indicator {
+        .video-badge {
             position: absolute;
-            bottom: 4px;
-            right: 4px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            font-size: 10px;
-            padding: 2px 4px;
+            top: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.8);
+            padding: 2px 5px;
             border-radius: 3px;
+            font-size: 8px;
+            font-weight: bold;
+        }
+
+        .metadata-tag {
+            font-size: 0.7rem;
+            background: #334155;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            margin-right: 0.4rem;
+            color: #cbd5e1;
         }
 
         .action-bar {
             position: fixed;
-            bottom: 1.5rem;
+            bottom: 2rem;
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
             max-width: 900px;
-            background: rgba(31, 41, 55, 0.95);
-            backdrop-filter: blur(10px);
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(12px);
             padding: 1.25rem;
-            border-radius: 1.5rem;
+            border-radius: 1.25rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-            z-index: 100;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            z-index: 1000;
         }
 
-        .selection-info { display: flex; align-items: center; gap: 1.5rem; }
-        .badge { background: rgba(239, 68, 68, 0.2); color: var(--accent-red); padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 800; font-size: 0.8rem; }
-        
-        .format-selector { display: flex; flex-direction: column; gap: 0.2rem; }
-        .format-selector label { font-size: 0.65rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; }
-        .format-selector select { 
-            background: #374151; 
-            color: white; 
-            border: 1px solid var(--border-color); 
-            border-radius: 0.4rem; 
-            padding: 0.3rem; 
-            font-size: 0.85rem; 
-        }
-
-        .ai-btn {
-            background: linear-gradient(to right, #dc2626, #f87171);
-            border: none;
+        .ai-script-btn {
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
             color: white;
-            padding: 0.8rem 1.5rem;
-            border-radius: 1rem;
-            font-weight: 900;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: transform 0.2s;
-        }
-
-        .deep-scan-btn {
-            background: linear-gradient(to right, #10b981, #34d399);
             border: none;
-            color: white;
             padding: 0.8rem 1.5rem;
-            border-radius: 1rem;
-            font-weight: 900;
+            border-radius: 0.75rem;
+            font-weight: 700;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: transform 0.2s;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
-
-        .ai-btn:active, .deep-scan-btn:active { transform: scale(0.96); }
-        .ai-btn:disabled, .deep-scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .hidden { display: none !important; }
-        
+
         input[type="checkbox"] {
-            width: 22px;
-            height: 22px;
-            cursor: pointer;
+            width: 20px;
+            height: 20px;
             accent-color: var(--accent-red);
+            cursor: pointer;
         }
 
-        .metadata-tag {
-            font-size: 0.65rem;
-            background: #4b5563;
-            padding: 0.2rem 0.4rem;
-            border-radius: 0.25rem;
-            margin-right: 0.3rem;
-            color: #e5e7eb;
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .exact-tag { color: var(--accent-red); font-size: 0.65rem; font-weight: 900; background: rgba(239, 68, 68, 0.1); padding: 2px 6px; border-radius: 4px; }
+        .ai-tag { color: var(--accent-purple); font-size: 0.65rem; font-weight: 900; background: rgba(168, 85, 247, 0.1); padding: 2px 6px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <header class="main-header">
-            <div class="brand">
+            <div>
                 <h1 class="title">AI Duplicate Janitor</h1>
-                <p class="subtitle">Smart Hashing & AI Metadata Analysis</p>
+                <p class="subtitle">Deep SHA-256 Hashing + AI Similarity Intelligence</p>
             </div>
             <div class="controls">
                 <div class="input-group">
-                    <input type="password" id="apiKey" placeholder="Groq API Key (Stored Locally)" class="api-input">
-                    <button onclick="clearKey()" class="clear-btn">I-clear</button>
+                    <input type="password" id="apiKey" placeholder="Groq API Key" class="api-input">
                 </div>
                 <div class="button-row">
                     <button onclick="selectFolder()" id="scanBtn" class="primary-btn">
-                        <span>📂</span> Pumili ng Folder
+                        <span>📂</span> Open Folder to Scan
                     </button>
-                    <button onclick="resetApp()" class="icon-btn" title="Reset">🔄</button>
+                    <button onclick="location.reload()" class="primary-btn" style="background:#475569; max-width: 50px;">🔄</button>
                 </div>
             </div>
         </header>
 
         <div id="statusBox" class="status-box hidden">
-            <div class="status-header">
-                <span id="statusText">Handa na...</span>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span id="statusText" style="font-weight: 600; font-size: 0.95rem;">Ready...</span>
                 <div id="loader" class="loader hidden"></div>
             </div>
-            <div id="progressContainer" class="progress-container hidden">
+            <div id="progressContainer" class="progress-container">
                 <div id="progressBar" class="progress-bar"></div>
             </div>
-            <code id="currentPath" class="current-path hidden"></code>
+            <code id="currentPath" class="current-path"></code>
         </div>
 
-        <div id="resultsGrid" class="results-grid">
-            <div id="emptyState" class="empty-state">
-                <p>Pumili ng folder para simulan ang malalimang pag-scan.</p>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">Gamit ang Deep SHA-256 (Full File Scan) para sa 100% accuracy.</p>
+        <div id="resultsGrid">
+            <!-- Exact Matches -->
+            <div id="exactSection" class="results-section hidden">
+                <div class="section-title" style="color: var(--accent-red);">🔴 Exact Matches (100% Identical)</div>
+                <div id="exactGroups"></div>
+            </div>
+
+            <!-- AI Similarity Matches -->
+            <div id="aiSection" class="results-section hidden">
+                <div class="section-title" style="color: var(--accent-purple);">✨ AI Similarity Matches (Possible Duplicates)</div>
+                <div id="aiGroups"></div>
+            </div>
+
+            <div id="emptyState" class="empty-state" style="text-align: center; padding: 4rem; opacity: 0.4;">
+                <p>No results yet. Select a folder to begin deep scanning.</p>
             </div>
         </div>
 
         <div id="actionBar" class="action-bar hidden">
-            <div class="selection-info">
-                <div class="badge">
-                    <span id="selectedCount">0</span> NAPILI
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <div>
+                    <span id="selectedCount" style="font-size: 1.5rem; font-weight: 900; color: var(--accent-red);">0</span>
+                    <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); display: block; margin-top: -5px;">FILES SELECTED</span>
                 </div>
                 <div class="format-selector">
-                    <label>Export Script Type</label>
-                    <select id="scriptType">
+                    <label style="font-size: 0.6rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Export To</label>
+                    <select id="scriptType" style="background: #0f172a; color: white; border: 1px solid var(--border-color); padding: 4px; border-radius: 4px; display: block; margin-top: 2px;">
                         <option value="bat">Windows (.bat)</option>
                         <option value="sh">Linux/Mac (.sh)</option>
-                        <option value="py">Python (.py)</option>
-                        <option value="pl">Perl (.pl)</option>
                     </select>
                 </div>
             </div>
-            
-            <div style="display: flex; gap: 0.5rem;">
-                <button onclick="deepScanAI()" id="deepScanBtn" class="deep-scan-btn" title="Hilingin sa AI na maghanap ng magkakahawig na files">
-                    <span>🧠</span> AI DEEP SCAN
-                </button>
-                <button onclick="processAI()" id="aiBtn" class="ai-btn">
-                    <span>🤖</span> GAWAN NG CLEANUP SCRIPT
-                </button>
-            </div>
+            <button onclick="generateScript()" class="ai-script-btn">GENERATE CLEANUP SCRIPT</button>
         </div>
     </div>
 
     <script>
-        const STORAGE_KEY = 'groq_api_key_janitor';
-        const MODELS = ["llama-3.1-70b-versatile", "llama-3.3-70b-versatile", "mixtral-8x7b-32768"];
-        let allFiles = []; 
-        let duplicateGroups = {};
+        const MODELS = ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile"];
+        let allFiles = [];
+        let exactGroups = {};
         let selectedPaths = new Set();
-        let totalFilesCount = 0;
-        let processedFilesCount = 0;
+        let totalFiles = 0;
+        let processedFiles = 0;
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedKey = localStorage.getItem(STORAGE_KEY);
-            if (savedKey) document.getElementById('apiKey').value = savedKey;
-            
-            document.getElementById('apiKey').addEventListener('input', (e) => {
-                localStorage.setItem(STORAGE_KEY, e.target.value);
-            });
-        });
+        window.onload = () => {
+            const saved = localStorage.getItem('janitor_key');
+            if (saved) document.getElementById('apiKey').value = saved;
+            document.getElementById('apiKey').oninput = (e) => localStorage.setItem('janitor_key', e.target.value);
+        };
 
-        function clearKey() {
-            localStorage.removeItem(STORAGE_KEY);
-            document.getElementById('apiKey').value = '';
+        function setStatus(txt, loading = false) {
+            document.getElementById('statusBox').classList.remove('hidden');
+            document.getElementById('statusText').innerText = txt;
+            document.getElementById('loader').classList.toggle('hidden', !loading);
         }
 
-        function setStatus(msg, showLoader = false, showProgress = false) {
-            const box = document.getElementById('statusBox');
-            box.classList.remove('hidden');
-            document.getElementById('statusText').innerText = msg;
-            document.getElementById('loader').classList.toggle('hidden', !showLoader);
-            
-            const progress = document.getElementById('progressContainer');
-            progress.classList.toggle('hidden', !showProgress);
-            
-            const pathDisplay = document.getElementById('currentPath');
-            pathDisplay.classList.toggle('hidden', !showProgress);
-        }
-
-        function updateProgress(path) {
-            processedFilesCount++;
-            const pathDisplay = document.getElementById('currentPath');
-            pathDisplay.innerText = `Kasalukuyang ini-iscan: ${path}`;
-            
-            if (totalFilesCount > 0) {
-                const percent = (processedFilesCount / totalFilesCount) * 100;
-                document.getElementById('progressBar').style.width = `${percent}%`;
-            }
-        }
-
-        async function countFiles(dirHandle) {
+        async function countFiles(handle) {
             let count = 0;
-            for await (const entry of dirHandle.values()) {
+            for await (const entry of handle.values()) {
                 if (entry.kind === 'file') count++;
-                else if (entry.kind === 'directory') count += await countFiles(entry);
+                else count += await countFiles(entry);
             }
             return count;
         }
 
         async function selectFolder() {
             try {
-                if (!window.showDirectoryPicker) {
-                    alert("Hindi suportado ng browser mo ang Directory Picker. Gumamit ng Chrome/Edge.");
-                    return;
-                }
-
-                const dirHandle = await window.showDirectoryPicker();
-                resetApp(false);
-                
-                setStatus("Binibilang ang mga file...", true, false);
-                totalFilesCount = await countFiles(dirHandle);
-                processedFilesCount = 0;
-                
-                setStatus("Deep Hashing (Full File Analysis)...", true, true);
-                duplicateGroups = {};
+                const handle = await window.showDirectoryPicker();
+                document.getElementById('emptyState').classList.add('hidden');
+                totalFiles = await countFiles(handle);
+                processedFiles = 0;
+                exactGroups = {};
                 allFiles = [];
                 
-                await scanFolder(dirHandle);
+                setStatus("Deep Scanning Content...", true);
+                await scan(handle);
                 
-                const apiKey = document.getElementById('apiKey').value;
-                if (apiKey && allFiles.length > 0) {
-                    await deepScanAI();
+                renderExactMatches();
+                
+                if (document.getElementById('apiKey').value) {
+                    await startAIScan();
                 } else {
-                    renderResults();
+                    setStatus("Scan Complete. (Add API Key for AI Similarity scan)");
                 }
-            } catch (err) {
-                if(err.name !== 'AbortError') {
-                    console.error(err);
-                    setStatus("Error sa pag-access ng folder.");
-                }
-            }
+            } catch (e) { if(e.name !== 'AbortError') console.error(e); }
         }
 
-        async function scanFolder(dirHandle, path = "") {
-            for await (const entry of dirHandle.values()) {
+        async function scan(handle, path = "") {
+            for await (const entry of handle.values()) {
                 const fullPath = path ? `${path}/${entry.name}` : entry.name;
-                
-                if (entry.kind === 'file') {
-                    updateProgress(fullPath);
+                if (entry.kind === 'directory') {
+                    await scan(entry, fullPath);
+                } else {
                     const file = await entry.getFile();
+                    processedFiles++;
+                    const percent = (processedFiles / totalFiles) * 100;
+                    document.getElementById('progressBar').style.width = `${percent}%`;
+                    document.getElementById('currentPath').innerText = fullPath;
+
+                    // FULL FILE HASH - No shortcuts for accuracy
+                    const hash = await computeHash(file);
                     
-                    // GUMAGAMIT NA NG FULL FILE HASH PARA IWAS MALI
-                    const hash = await generateFullFileHash(file);
-                    
-                    let meta = {
+                    const meta = {
                         name: entry.name,
                         path: fullPath,
                         size: file.size,
                         modified: file.lastModified,
                         type: file.type,
-                        resolution: null,
                         preview: null,
-                        isVideo: file.type.startsWith('video/')
+                        res: null,
+                        ext: entry.name.split('.').pop().toLowerCase()
                     };
 
                     if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
-                        try {
-                            const blobUrl = URL.createObjectURL(file);
-                            meta.preview = blobUrl;
-                            
-                            if (file.type.startsWith('image/')) {
-                                const img = new Image();
-                                img.src = blobUrl;
-                                await new Promise(r => {
-                                    img.onload = () => {
-                                        meta.resolution = `${img.width}x${img.height}`;
-                                        r();
-                                    };
-                                    img.onerror = () => r();
-                                });
-                            } else if (file.type.startsWith('video/')) {
-                                const video = document.createElement('video');
-                                video.src = blobUrl;
-                                video.preload = 'metadata';
-                                await new Promise(r => {
-                                    video.onloadedmetadata = () => {
-                                        meta.resolution = `${video.videoWidth}x${video.videoHeight}`;
-                                        r();
-                                    };
-                                    video.onerror = () => r();
-                                });
-                            }
-                        } catch (e) { console.warn("Preview error:", fullPath); }
+                        const url = URL.createObjectURL(file);
+                        meta.preview = url;
+                        if (file.type.startsWith('image/')) {
+                            const img = new Image(); img.src = url;
+                            await new Promise(r => img.onload = () => { meta.res = `${img.width}x${img.height}`; r(); });
+                        }
                     }
-                    
-                    if (!duplicateGroups[hash]) duplicateGroups[hash] = [];
-                    duplicateGroups[hash].push(meta);
-                    allFiles.push(meta);
 
-                } else if (entry.kind === 'directory') {
-                    await scanFolder(entry, fullPath);
+                    if (!exactGroups[hash]) exactGroups[hash] = [];
+                    exactGroups[hash].push(meta);
+                    allFiles.push(meta);
                 }
             }
         }
 
-        // MAS MABAGAL PERO SIGURADONG TAMA (FULL FILE HASH)
-        async function generateFullFileHash(file) {
+        async function computeHash(file) {
             const buffer = await file.arrayBuffer();
             const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        function renderResults() {
-            const grid = document.getElementById('resultsGrid');
-            grid.innerHTML = '';
-            let groupCount = 0;
+        function renderExactMatches() {
+            const container = document.getElementById('exactGroups');
+            container.innerHTML = "";
+            let count = 0;
             
-            Object.entries(duplicateGroups).forEach(([hash, files]) => {
+            Object.entries(exactGroups).forEach(([hash, files]) => {
                 if (files.length > 1) {
-                    groupCount++;
-                    grid.appendChild(createGroupUI(files, `EXACT CONTENT MATCH #${groupCount}`));
+                    count++;
+                    container.appendChild(createGroupUI(files, `Exact Match Group #${count}`, "exact"));
                 }
             });
 
-            document.getElementById('progressContainer').classList.add('hidden');
-            document.getElementById('currentPath').classList.add('hidden');
-
-            if (groupCount > 0) {
-                setStatus(`Nakahanap ng ${groupCount} sets ng 100% exact duplicates.`);
-                document.getElementById('actionBar').classList.remove('hidden');
-            } else {
-                setStatus("Walang nakitang exact duplicates. AI Scan ang susubok...");
-                grid.innerHTML = `<div class="empty-state">Walang exact duplicates na nahanap base sa Hashing.</div>`;
+            if (count > 0) {
+                document.getElementById('exactSection').classList.remove('hidden');
                 document.getElementById('actionBar').classList.remove('hidden');
             }
         }
 
-        function createGroupUI(files, titleText) {
-            const groupContainer = document.createElement('div');
-            groupContainer.className = "duplicate-group";
-            const listHtml = files.map(f => `
-                <div class="file-card">
-                    <input type="checkbox" onchange="toggleFile('${f.path}', this.checked)">
-                    <div class="preview-box">
-                        ${f.preview ? (
-                            f.isVideo ? 
-                            `<video src="${f.preview}" class="preview-video" muted onmouseover="this.play()" onmouseout="this.pause();this.currentTime=0"></video><span class="video-indicator">VIDEO</span>` : 
-                            `<img src="${f.preview}" class="preview-img">`
-                        ) : `<span style="font-size:10px; font-weight:bold; color:var(--text-muted)">${f.name.split('.').pop().toUpperCase()}</span>`}
-                    </div>
-                    <div style="flex:1; min-width:0">
-                        <p style="margin:0; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 0.9rem;">${f.name}</p>
-                        <p style="margin:0.2rem 0 0 0; font-size:0.7rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${f.path}</p>
-                        <div style="margin-top: 0.35rem">
-                            <span class="metadata-tag">${(f.size/1024/1024).toFixed(2)} MB</span>
-                            ${f.resolution ? `<span class="metadata-tag">${f.resolution}</span>` : ''}
-                            <span class="metadata-tag">${new Date(f.modified).toLocaleDateString()}</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-            groupContainer.innerHTML = `<div style="font-size:10px; color:var(--accent-red); font-weight:bold; letter-spacing: 1px; margin-bottom:10px;">${titleText}</div>${listHtml}`;
-            return groupContainer;
-        }
-
-        async function deepScanAI() {
+        async function startAIScan() {
+            setStatus("AI Thinking: Grouping similar names and metadata...", true);
             const apiKey = document.getElementById('apiKey').value;
-            if (!apiKey) { renderResults(); return; }
             
-            setStatus("AI Analysis: Naghahanap ng magkakahawig na filenames at metadata...", true, false);
-            const btn = document.getElementById('deepScanBtn');
-            btn.disabled = true;
-
-            renderResults();
-
-            const fileList = allFiles.map(f => ({
-                name: f.name,
-                path: f.path,
-                size: f.size,
-                res: f.resolution,
-                date: new Date(f.modified).toISOString().split('T')[0]
-            }));
-
-            const limitedList = fileList.slice(0, 400);
-
-            const prompt = `Act as a file system cleaner. Look at these files and identify duplicates or near-duplicates.
-            Rules:
-            1. ONLY group them if they are definitely related (e.g., "vacation.jpg" and "vacation (1).jpg" with same/similar size).
-            2. Do NOT group files just because they have the same extension.
-            3. If sizes are wildly different (e.g. 10KB vs 10MB) but names are similar, they might be thumbnails vs originals - keep them separate unless they look like versions.
-            4. Focus on finding "copy" patterns in filenames.
+            // Send metadata to AI
+            const list = allFiles.map(f => ({ n: f.name, p: f.path, s: f.size, r: f.res }));
             
-            FILES: ${JSON.stringify(limitedList)}
-            
-            Return ONLY a JSON array of arrays of file 'path' strings.`;
+            // Only send files that AREN'T already in exact groups to save tokens
+            const inExact = new Set(Object.values(exactGroups).filter(g => g.length > 1).flat().map(f => f.path));
+            const filtered = list.filter(f => !inExact.includes(f.p)).slice(0, 500);
 
-            try {
-                const responseText = await fetchGroqWithFallback(prompt);
-                const suggestedGroups = JSON.parse(responseText);
-                const grid = document.getElementById('resultsGrid');
-                
-                if (suggestedGroups && suggestedGroups.length > 0) {
-                    const aiHeader = document.createElement('div');
-                    aiHeader.style = "background:var(--bg-card); padding:1rem; border-radius:0.5rem; color:var(--accent-green); margin-bottom:1rem; font-weight:bold; border: 1px solid var(--accent-green)";
-                    aiHeader.innerText = "✨ AI Analysis Results (Potential Similars)";
-                    grid.prepend(aiHeader);
+            const prompt = `Find possible duplicates (near matches) from this file list. 
+            Group them by similarity (filenames with numbers like img01 vs img01_copy, or same name different case).
+            Return ONLY a JSON array of arrays of file paths.
+            Files: ${JSON.stringify(filtered)}`;
 
-                    suggestedGroups.forEach((paths, i) => {
-                        const groupFiles = allFiles.filter(f => paths.includes(f.path));
-                        if(groupFiles.length > 0) grid.appendChild(createGroupUI(groupFiles, `AI DETECTED RELATION #${i+1}`));
-                    });
-                }
-                setStatus("Tapos na ang malalimang pagsusuri.");
-            } catch (err) {
-                console.error(err);
-                setStatus("AI Scan Error.");
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        function toggleFile(path, isChecked) {
-            if (isChecked) selectedPaths.add(path);
-            else selectedPaths.delete(path);
-            document.getElementById('selectedCount').innerText = selectedPaths.size;
-        }
-
-        function resetApp(full = true) {
-            allFiles.forEach(f => {
-                if (f.preview && f.preview.startsWith('blob:')) URL.revokeObjectURL(f.preview);
-            });
-            selectedPaths.clear();
-            allFiles = [];
-            totalFilesCount = 0;
-            processedFilesCount = 0;
-            document.getElementById('progressBar').style.width = '0%';
-            document.getElementById('selectedCount').innerText = '0';
-            document.getElementById('resultsGrid').innerHTML = `<div id="emptyState" class="empty-state"><p>Pumili ng folder para simulan ang pag-scan.</p></div>`;
-            document.getElementById('actionBar').classList.add('hidden');
-            if(full) document.getElementById('statusBox').classList.add('hidden');
-        }
-
-        async function processAI() {
-            const apiKey = document.getElementById('apiKey').value;
-            if (!apiKey) return alert("API Key is required.");
-            if (selectedPaths.size === 0) return alert("Pumili muna ng files.");
-            const type = document.getElementById('scriptType').value;
-            const btn = document.getElementById('aiBtn');
-            btn.disabled = true;
-            setStatus(`Generating ${type.toUpperCase()}...`, true);
-            
-            const prompt = `Create a safe cleanup script (${type}) to delete these files. 
-            Add a clear warning at the top. 
-            Ensure paths with spaces are quoted correctly. 
-            FILES: ${JSON.stringify(Array.from(selectedPaths))}`;
-            
-            try {
-                const code = await fetchGroqWithFallback(prompt);
-                const blob = new Blob([code], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = `cleanup_duplicates.${type}`; a.click();
-                setStatus("Handa na ang script!", false);
-            } catch (err) {
-                setStatus("Script error.", false);
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        async function fetchGroqWithFallback(prompt, index = 0) {
-            if (index >= MODELS.length) throw new Error("API fail.");
-            const apiKey = document.getElementById('apiKey').value;
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ 
-                        model: MODELS[index], 
-                        messages: [{ role: "user", content: prompt }],
-                        temperature: 0.1,
-                        response_format: prompt.includes("JSON") ? { type: "json_object" } : undefined
+                        model: MODELS[0], 
+                        messages: [{role: "user", content: prompt}],
+                        response_format: { type: "json_object" }
                     })
                 });
-                if (!res.ok) throw new Error();
+                
                 const data = await res.json();
-                let content = data.choices[0].message.content;
-                if (prompt.includes("JSON")) {
-                    try {
-                        const parsed = JSON.parse(content);
-                        if (Array.isArray(parsed)) return content;
-                        const values = Object.values(parsed);
-                        for (let val of values) if (Array.isArray(val)) return JSON.stringify(val);
-                    } catch(e) {}
+                const content = JSON.parse(data.choices[0].message.content);
+                const groups = Object.values(content)[0]; // Extract first array found
+
+                if (groups && groups.length > 0) {
+                    document.getElementById('aiSection').classList.remove('hidden');
+                    const container = document.getElementById('aiGroups');
+                    groups.forEach((paths, i) => {
+                        const groupFiles = allFiles.filter(f => paths.includes(f.path));
+                        if (groupFiles.length > 1) container.appendChild(createGroupUI(groupFiles, `Possible Duplicate #${i+1}`, "ai"));
+                    });
                 }
-                return content.replace(/```[a-z]*\n/gi, '').replace(/```/g, '').trim();
+                setStatus("AI Scan Complete.");
             } catch (e) {
-                return fetchGroqWithFallback(prompt, index + 1);
+                console.error(e);
+                setStatus("AI Scan failed or returned no results.");
             }
+        }
+
+        function createGroupUI(files, title, type) {
+            const div = document.createElement('div');
+            div.className = "duplicate-group";
+            const tag = type === 'exact' ? '<span class="exact-tag">HASH MATCH</span>' : '<span class="ai-tag">SIMILARITY MATCH</span>';
+            
+            div.innerHTML = `
+                <div class="group-header">
+                    <span style="font-size: 0.75rem; font-weight: 800;">${title}</span>
+                    ${tag}
+                </div>
+                <div class="group-files">
+                    ${files.map(f => `
+                        <div class="file-card">
+                            <input type="checkbox" onchange="updateSelection('${f.path}', this.checked)">
+                            <div class="preview-box">
+                                ${f.preview ? 
+                                    (f.type.startsWith('video/') ? `<video src="${f.preview}" class="preview-video" muted onmouseover="this.play()" onmouseout="this.pause();this.currentTime=0"></video><span class="video-badge">VIDEO</span>` : `<img src="${f.preview}" class="preview-img">`) 
+                                    : `<div style="display:flex; height:100%; align-items:center; justify-content:center; font-size:12px; color:#475569; font-weight:900">${f.ext.toUpperCase()}</div>`
+                                }
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-size: 0.85rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${f.name}</div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 2px 0;">${f.path}</div>
+                                <div style="display: flex; margin-top: 5px;">
+                                    <span class="metadata-tag">${(f.size/1024/1024).toFixed(2)} MB</span>
+                                    ${f.res ? `<span class="metadata-tag">${f.res}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            return div;
+        }
+
+        function updateSelection(path, checked) {
+            if (checked) selectedPaths.add(path);
+            else selectedPaths.delete(path);
+            document.getElementById('selectedCount').innerText = selectedPaths.size;
+        }
+
+        async function generateScript() {
+            if (selectedPaths.size === 0) return;
+            const apiKey = document.getElementById('apiKey').value;
+            const type = document.getElementById('scriptType').value;
+            setStatus("Generating Cleanup Script...", true);
+            
+            const prompt = `Generate a safe ${type} script to delete these files. 
+            Paths: ${JSON.stringify(Array.from(selectedPaths))}. 
+            Add a 'Dry Run' echo at the start and handle spaces in paths with quotes.`;
+
+            try {
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: MODELS[0], messages: [{role: "user", content: prompt}] })
+                });
+                const data = await res.json();
+                const code = data.choices[0].message.content.replace(/```[a-z]*\n/gi, '').replace(/```/g, '').trim();
+                
+                const blob = new Blob([code], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `janitor_cleanup.${type}`; a.click();
+                setStatus("Script Downloaded!");
+            } catch (e) { setStatus("Error generating script."); }
         }
     </script>
 </body>
