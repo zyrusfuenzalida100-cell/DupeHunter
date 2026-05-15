@@ -454,8 +454,20 @@ header{padding:26px 0 18px;display:flex;align-items:center;justify-content:space
         <button class="btn bg sm" onclick="autoKeep()">⚡ Auto-Keep Newest</button>
         <div style="position:relative;display:inline-block" id="exportWrap">
           <button class="btn bd sm" id="mdb" onclick="toggleExportMenu()" disabled>📦 Export Script ▾</button>
-          <div id="exportMenu" style="display:none;position:absolute;bottom:calc(100% + 8px);right:0;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:220px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:fadeUp .2s ease">
-            <div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;padding:4px 8px 8px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);margin-bottom:6px">Export checked files as…</div>
+          <div id="exportMenu" style="display:none;position:absolute;bottom:calc(100% + 8px);right:0;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:260px;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:fadeUp .2s ease">
+            <!-- BASE PATH INPUT -->
+            <div style="padding:8px 6px 10px;border-bottom:1px solid var(--border);margin-bottom:6px">
+              <div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📁 Full folder path on your computer</div>
+              <input id="basePath" type="text" placeholder="e.g. C:\Users\You\Desktop\Memories in my life" spellcheck="false"
+                style="width:100%;background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:10px;outline:none;box-sizing:border-box"
+                oninput="validateBasePath()">
+              <div id="basePathHint" style="font-size:9px;margin-top:5px;color:var(--muted);line-height:1.5">
+                Windows: <code style="color:var(--accent2)">C:\Users\YourName\Desktop\FolderName</code><br>
+                Mac/Linux: <code style="color:var(--accent2)">/Users/yourname/Desktop/FolderName</code>
+              </div>
+              <div id="basePathWarn" style="display:none;font-size:9px;margin-top:4px;color:var(--warn)">⚠️ Enter the full path to your scanned folder</div>
+            </div>
+            <div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;padding:0 6px 6px;text-transform:uppercase;letter-spacing:.5px">Export checked files as…</div>
             <button class="emitem" onclick="doExport('sh')">
               <span class="emico">🍎</span>
               <div><div class="emtitle">Bash Script <code>.sh</code></div><div class="emsub">Mac &amp; Linux · moves to Trash</div></div>
@@ -525,14 +537,19 @@ header{padding:26px 0 18px;display:flex;align-items:center;justify-content:space
 
 <script>
 // ════════════════════════════════════════════
+// ⚙️  CONFIG — paste your API key here
+// ════════════════════════════════════════════
+const GROQ_API_KEY = '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';  // ← paste your Groq key here e.g. 'gsk_xxxxxxxxxxxx'
+
+// ════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════
 let allF=[],groups=[],fst={},sel=new Set();
 let curFilter='all',ftFilter='all';
 let cfg={exact:true,name:true,ai:true,meta:true};
-let mgi=-1,mfi=-1; // modal indices
-let groqKey='',aiProvider='groq'; // AI settings — default to groq
-let curModalFile=null; // reference for download
+let mgi=-1,mfi=-1;
+let groqKey=GROQ_API_KEY,aiProvider=GROQ_API_KEY?'groq':'groq';
+let curModalFile=null;
 
 // ════════════════════════════════════════════
 // INPUT
@@ -558,6 +575,19 @@ dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over
 // ════════════════════════════════════════════
 // SETTINGS & API KEY
 // ════════════════════════════════════════════
+
+// Auto-apply hardcoded key on load
+window.addEventListener('DOMContentLoaded',()=>{
+  if(GROQ_API_KEY){
+    const inp=document.getElementById('groqKeyInput');
+    if(inp) inp.value=GROQ_API_KEY;
+    updateKeyStatus();
+    // Select Groq radio
+    const radio=document.querySelector('input[name="aiProvider"][value="groq"]');
+    if(radio){radio.checked=true;setProvider(radio);}
+    toast('⚡','Groq API key loaded from config');
+  }
+});
 function toggleSettings(){
   const d=document.getElementById('settingsDrawer');
   d.style.display=d.style.display==='none'?'block':'none';
@@ -1278,150 +1308,144 @@ function toggleExportMenu(){
 }
 function closeExportMenu(){document.getElementById('exportMenu').style.display='none';}
 
+function validateBasePath(){
+  const v=document.getElementById('basePath').value.trim();
+  const w=document.getElementById('basePathWarn');
+  if(w) w.style.display=v?'none':'block';
+}
+
+function buildAbsPath(base, relPath){
+  // Detect Windows path (starts with drive letter or \\)
+  const isWin=base.match(/^[A-Za-z]:\\/) || base.startsWith('\\\\');
+  // Remove the top-level folder from relPath since base already is that folder
+  // e.g. relPath = "Memories in my life/subfolder/file.mp4"
+  //      base    = "C:\Users\You\Desktop\Memories in my life"
+  // Strip the first segment of relPath (it's the same as the folder name in base)
+  const parts=relPath.replace(/\\/g,'/').split('/');
+  const withoutRoot=parts.slice(1).join(isWin?'\\':'/'); // drop folder root segment
+  const sep=isWin?'\\':'/';
+  // Clean trailing separator from base
+  const cleanBase=base.replace(/[/\\]+$/,'');
+  return withoutRoot ? cleanBase+sep+withoutRoot : cleanBase+sep+parts[parts.length-1];
+}
+
 function doExport(fmt){
   document.getElementById('exportMenu').style.display='none';
-  // Use checked (selected) files — exactly what user ticked
+
   const td=[...sel];
   if(!td.length){toast('ℹ️','Check some files first — tick their checkboxes then export');return;}
 
-  // Resolve full file objects so we can show file names in the script
-  const fileMap={};
-  allF.forEach(f=>fileMap[f.path]=f);
+  const base=document.getElementById('basePath').value.trim();
+  if(!base){
+    document.getElementById('exportMenu').style.display='block';
+    document.getElementById('basePathWarn').style.display='block';
+    document.getElementById('basePath').focus();
+    toast('⚠️','Enter your folder path first!');
+    return;
+  }
+
+  const isWin=base.match(/^[A-Za-z]:\\/) || base.startsWith('\\\\');
+  const sep=isWin?'\\':'/';
+
+  // Build absolute paths
+  const absPaths=td.map(p=>buildAbsPath(base,p));
 
   const now=new Date().toLocaleString();
-  const count=td.length;
+  const count=absPaths.length;
   let content='',filename='',mime='text/plain';
 
   if(fmt==='sh'){
-    // Bash — uses AppleScript trash on Mac, gio trash on Linux
     filename='dupehunter-delete.sh';
-    const lines=td.map(p=>{
-      const safe=p.replace(/'/g,"'\\''");
-      return `trash_file '${safe}'`;
-    }).join('\n');
     content=`#!/usr/bin/env bash
 # ╔══════════════════════════════════════════╗
 # ║  DupeHunter — Delete Script              ║
 # ║  Generated: ${now.padEnd(28)}║
 # ║  Files: ${String(count).padEnd(33)}║
 # ╚══════════════════════════════════════════╝
-#
 # HOW TO RUN:
-#   1. Open Terminal
-#   2. chmod +x dupehunter-delete.sh
-#   3. ./dupehunter-delete.sh
-#
-# Files go to TRASH — recoverable from Trash.
+#   chmod +x dupehunter-delete.sh && ./dupehunter-delete.sh
+# Files go to TRASH — recoverable.
 
-set -e
-
-# Cross-platform trash function
 trash_file() {
-  if command -v trash &>/dev/null; then
-    trash "$1"                          # trash-cli (Linux) or trash (Mac via brew)
+  if command -v trash &>/dev/null; then trash "$1"
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     osascript -e "tell app \\"Finder\\" to delete POSIX file \\"$1\\"" 2>/dev/null || mv "$1" ~/.Trash/
   else
-    gio trash "$1" 2>/dev/null || mv "$1" ~/.local/share/Trash/files/ 2>/dev/null || rm "$1"
+    gio trash "$1" 2>/dev/null || mv "$1" ~/.local/share/Trash/files/ 2>/dev/null || rm -i "$1"
   fi
 }
 
 echo "🗑  DupeHunter — Deleting ${count} files..."
-echo ""
+DELETED=0; SKIPPED=0
 
-DELETED=0
-SKIPPED=0
-
-${lines.split('\n').map((line,i)=>{
-  const p=td[i];
-  return `if [ -f '${p.replace(/'/g,"'\\''")}'  ]; then
-  echo "  [$((DELETED+SKIPPED+1))/${count}] Removing: ${p.replace(/'/g,"'\\''")}"
-  ${line}
-  DELETED=$((DELETED+1))
+${absPaths.map((p,i)=>{
+  const safe=p.replace(/'/g,"'\\''");
+  return `# [${i+1}/${count}]
+if [ -f '${safe}' ]; then
+  echo "  [${i+1}/${count}] Deleting: ${safe}"
+  trash_file '${safe}' && DELETED=$((DELETED+1))
 else
-  echo "  [$((DELETED+SKIPPED+1))/${count}] Skipped (not found): ${p.replace(/'/g,"'\\''")}"
+  echo "  [${i+1}/${count}] Skipped (not found): ${safe}"
   SKIPPED=$((SKIPPED+1))
 fi`;}).join('\n\n')}
 
 echo ""
-echo "✅  Done! Deleted: \$DELETED  Skipped: \$SKIPPED"
-echo "    Check your Trash to recover any files."
+echo "✅  Done! Deleted: $DELETED  Skipped: $SKIPPED"
 `;
 
   }else if(fmt==='ps1'){
-    // PowerShell — sends to Recycle Bin using Shell.Application
     filename='dupehunter-delete.ps1';
-    const lines=td.map(p=>`  Remove-ToRecycleBin "${p.replace(/"/g,'`"')}"`).join('\n');
     content=`# ================================================
 # DupeHunter — PowerShell Delete Script
 # Generated: ${now}
-# Files to delete: ${count}
+# Base folder: ${base}
+# Files: ${count}
 # ================================================
-#
-# HOW TO RUN:
-#   Right-click this file → "Run with PowerShell"
-#   OR in PowerShell: .\\dupehunter-delete.ps1
-#
+# HOW TO RUN: Right-click → "Run with PowerShell"
 # Files go to Recycle Bin — recoverable.
-#
 # If blocked: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 
 function Remove-ToRecycleBin {
-    param([string]$Path)
+    param([string]$FilePath)
     $shell = New-Object -ComObject Shell.Application
-    if (Test-Path $Path) {
-        $item = $shell.Namespace(0).ParseName($Path)
-        if ($item) {
-            $item.InvokeVerb("delete")
-            Write-Host "  [DELETED] $Path" -ForegroundColor Green
-            return $true
-        }
+    if (Test-Path -LiteralPath $FilePath) {
+        $item = $shell.Namespace(0).ParseName($FilePath)
+        if ($item) { $item.InvokeVerb("delete"); return $true }
     }
-    Write-Host "  [SKIPPED] Not found: $Path" -ForegroundColor Yellow
     return $false
 }
 
+$deleted = 0; $skipped = 0
 Write-Host ""
-Write-Host "DupeHunter — Deleting ${count} files to Recycle Bin..." -ForegroundColor Cyan
+Write-Host "DupeHunter -- Deleting ${count} files to Recycle Bin..." -ForegroundColor Cyan
 Write-Host ""
 
-$deleted = 0
-$skipped = 0
-
-${td.map((p,i)=>`
-# File ${i+1}/${count}
-if (Remove-ToRecycleBin "${p.replace(/"/g,'`"')}") { $deleted++ } else { $skipped++ }`).join('')}
+${absPaths.map((p,i)=>{
+  const safe=p.replace(/"/g,'`"').replace(/'/g,"'");
+  return `# [${i+1}/${count}]
+$f = "${safe}"
+Write-Host "  [${i+1}/${count}] $f" -NoNewline
+if (Remove-ToRecycleBin $f) { Write-Host " -> DELETED" -ForegroundColor Green; $deleted++ }
+else { Write-Host " -> SKIPPED (not found)" -ForegroundColor Yellow; $skipped++ }`;}).join('\n\n')}
 
 Write-Host ""
 Write-Host "Done! Deleted: $deleted   Skipped: $skipped" -ForegroundColor Cyan
-Write-Host "Check your Recycle Bin to recover any files." -ForegroundColor Gray
-Write-Host ""
+Write-Host "Check your Recycle Bin to recover files." -ForegroundColor Gray
 Read-Host "Press Enter to close"
 `;
 
   }else if(fmt==='bat'){
-    // Batch — uses del (permanent) with confirmation prompt
     filename='dupehunter-delete.bat';
-    const lines=td.map((p,i)=>`echo   [${i+1}/${count}] %PATH_FILE%
-set "PATH_FILE=${p.replace(/"/g,'')}"
-if exist "%PATH_FILE%" (
-  del /f /q "%PATH_FILE%"
-  echo     ^> Deleted.
-  set /a DELETED+=1
-) else (
-  echo     ^> Skipped: not found.
-  set /a SKIPPED+=1
-)`).join('\n\n');
     content=`@echo off
 :: ================================================
 :: DupeHunter — Batch Delete Script
 :: Generated: ${now}
+:: Base folder: ${base}
 :: Files: ${count}
-:: ================================================
-::
+:: WARNING: PERMANENT DELETE (no Recycle Bin)
+:: Use .ps1 for Recycle Bin support.
 :: HOW TO RUN: Double-click this file
-:: WARNING: PERMANENT DELETE — files do NOT go to Recycle Bin
-:: Use the PowerShell script for Recycle Bin support.
+:: ================================================
 
 setlocal enabledelayedexpansion
 set DELETED=0
@@ -1429,27 +1453,38 @@ set SKIPPED=0
 
 echo.
 echo DupeHunter -- Deleting ${count} files...
-echo WARNING: This permanently deletes files!
+echo WARNING: Files will be PERMANENTLY deleted!
+echo Base: ${base}
 echo.
 pause
 
-${lines}
+${absPaths.map((p,i)=>{
+  const safe=p.replace(/"/g,'');
+  return `echo   [${i+1}/${count}] ${safe}
+if exist "${safe}" (
+  del /f /q "${safe}"
+  echo     ^> Deleted.
+  set /a DELETED+=1
+) else (
+  echo     ^> Skipped: not found.
+  set /a SKIPPED+=1
+)`;}).join('\n\n')}
 
 echo.
-echo Done! Deleted: %DELETED%   Skipped: %SKIPPED%
+echo Done^^!  Deleted: %DELETED%   Skipped: %SKIPPED%
 echo.
 pause
 `;
 
   }else{
-    // Plain txt
     filename='dupehunter-delete-list.txt';
-    content=`# DupeHunter — Files Marked for Deletion
+    content=`# DupeHunter — Files to Delete
 # Generated: ${now}
+# Base folder: ${base}
 # Total: ${count} files
 # ─────────────────────────────────────────
 
-${td.join('\n')}
+${absPaths.join('\n')}
 `;
   }
 
@@ -1458,7 +1493,7 @@ ${td.join('\n')}
   const a=document.createElement('a');
   a.href=url;a.download=filename;a.click();
   URL.revokeObjectURL(url);
-  toast('📦',`Downloaded ${filename} — ${count} files listed`);
+  toast('📦',`Downloaded ${filename} with ${count} absolute paths`);
 }
 
 // ════════════════════════════════════════════
