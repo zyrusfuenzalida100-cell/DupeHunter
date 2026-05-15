@@ -12,6 +12,7 @@
             --text-muted: #9ca3af;
             --accent-blue: #2563eb;
             --accent-red: #ef4444;
+            --accent-green: #10b981;
             --border-color: #374151;
         }
 
@@ -110,20 +111,51 @@
             cursor: pointer;
         }
 
+        /* Progress Styling */
         .status-box {
-            padding: 1rem;
-            background: rgba(37, 99, 235, 0.1);
-            border: 1px solid rgba(37, 99, 235, 0.3);
+            padding: 1.25rem;
+            background: rgba(31, 41, 55, 0.5);
+            border: 1px solid var(--border-color);
             border-radius: 0.75rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             margin-bottom: 1.5rem;
         }
 
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: #374151;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, var(--accent-blue), var(--accent-green));
+            transition: width 0.1s ease-out;
+        }
+
+        .current-path {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+        }
+
         .loader {
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             border: 2px solid var(--accent-blue);
             border-top-color: transparent;
             border-radius: 50%;
@@ -175,7 +207,7 @@
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
-            max-width: 850px;
+            max-width: 900px;
             background: rgba(31, 41, 55, 0.95);
             backdrop-filter: blur(10px);
             padding: 1.25rem;
@@ -206,7 +238,7 @@
             background: linear-gradient(to right, #dc2626, #f87171);
             border: none;
             color: white;
-            padding: 0.8rem 1.8rem;
+            padding: 0.8rem 1.5rem;
             border-radius: 1rem;
             font-weight: 900;
             cursor: pointer;
@@ -216,7 +248,22 @@
             transition: transform 0.2s;
         }
 
-        .ai-btn:active { transform: scale(0.96); }
+        .deep-scan-btn {
+            background: linear-gradient(to right, #10b981, #34d399);
+            border: none;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 1rem;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: transform 0.2s;
+        }
+
+        .ai-btn:active, .deep-scan-btn:active { transform: scale(0.96); }
+        .ai-btn:disabled, .deep-scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .hidden { display: none !important; }
         
@@ -226,6 +273,14 @@
             cursor: pointer;
             accent-color: var(--accent-red);
         }
+
+        .metadata-tag {
+            font-size: 0.6rem;
+            background: #4b5563;
+            padding: 0.1rem 0.3rem;
+            border-radius: 0.2rem;
+            margin-right: 0.3rem;
+        }
     </style>
 </head>
 <body>
@@ -234,7 +289,7 @@
         <header class="main-header">
             <div class="brand">
                 <h1 class="title">AI Duplicate Janitor</h1>
-                <p class="subtitle">Scan, Preview, and AI-Powered Cleanup</p>
+                <p class="subtitle">Smart Hashing & AI Metadata Analysis</p>
             </div>
             <div class="controls">
                 <div class="input-group">
@@ -250,15 +305,22 @@
             </div>
         </header>
 
+        <!-- Improved Status with Progress -->
         <div id="statusBox" class="status-box hidden">
-            <span id="statusText">Ready...</span>
-            <div id="loader" class="loader hidden"></div>
+            <div class="status-header">
+                <span id="statusText">Ready...</span>
+                <div id="loader" class="loader hidden"></div>
+            </div>
+            <div id="progressContainer" class="progress-container hidden">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <code id="currentPath" class="current-path hidden"></code>
         </div>
 
         <div id="resultsGrid" class="results-grid">
             <div id="emptyState" class="empty-state">
                 <p>Select a folder to begin scanning your local files.</p>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">Requires a modern desktop browser (Chrome, Edge, or Opera).</p>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">The janitor uses SHA-256 for exact matches and AI for similar files.</p>
             </div>
         </div>
 
@@ -278,17 +340,25 @@
                 </div>
             </div>
             
-            <button onclick="processAI()" id="aiBtn" class="ai-btn">
-                <span>🤖</span> GENERATE CLEANUP FILE
-            </button>
+            <div style="display: flex; gap: 0.5rem;">
+                <button onclick="deepScanAI()" id="deepScanBtn" class="deep-scan-btn" title="Ask AI to find similar names/content">
+                    <span>🧠</span> AI DEEP SCAN
+                </button>
+                <button onclick="processAI()" id="aiBtn" class="ai-btn">
+                    <span>🤖</span> GENERATE CLEANUP
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
         const STORAGE_KEY = 'groq_api_key_janitor';
         const MODELS = ["llama-3.1-70b-versatile", "llama-3.3-70b-versatile", "mixtral-8x7b-32768"];
+        let allFiles = []; 
         let duplicateGroups = {};
         let selectedPaths = new Set();
+        let totalFilesCount = 0;
+        let processedFilesCount = 0;
 
         window.addEventListener('DOMContentLoaded', () => {
             const savedKey = localStorage.getItem(STORAGE_KEY);
@@ -304,30 +374,63 @@
             document.getElementById('apiKey').value = '';
         }
 
-        function setStatus(msg, showLoader = false) {
+        function setStatus(msg, showLoader = false, showProgress = false) {
             const box = document.getElementById('statusBox');
             box.classList.remove('hidden');
             document.getElementById('statusText').innerText = msg;
             document.getElementById('loader').classList.toggle('hidden', !showLoader);
+            
+            const progress = document.getElementById('progressContainer');
+            progress.classList.toggle('hidden', !showProgress);
+            
+            const pathDisplay = document.getElementById('currentPath');
+            pathDisplay.classList.toggle('hidden', !showProgress);
+        }
+
+        function updateProgress(path) {
+            processedFilesCount++;
+            const pathDisplay = document.getElementById('currentPath');
+            pathDisplay.innerText = `Scanning: ${path}`;
+            
+            if (totalFilesCount > 0) {
+                const percent = (processedFilesCount / totalFilesCount) * 100;
+                document.getElementById('progressBar').style.width = `${percent}%`;
+            }
+        }
+
+        async function countFiles(dirHandle) {
+            let count = 0;
+            for await (const entry of dirHandle.values()) {
+                if (entry.kind === 'file') count++;
+                else if (entry.kind === 'directory') count += await countFiles(entry);
+            }
+            return count;
         }
 
         async function selectFolder() {
             try {
                 if (!window.showDirectoryPicker) {
-                    alert("Your browser does not support the File System Access API. Please use Chrome, Edge, or Opera on Desktop.");
+                    alert("Your browser does not support Directory Picker. Please use Chrome/Edge on Desktop.");
                     return;
                 }
 
                 const dirHandle = await window.showDirectoryPicker();
                 resetApp(false);
-                setStatus("Analyzing folder structure...", true);
+                
+                setStatus("Calculating total files...", true, false);
+                totalFilesCount = await countFiles(dirHandle);
+                processedFilesCount = 0;
+                
+                setStatus("Indexing files and generating hashes...", true, true);
                 duplicateGroups = {};
+                allFiles = [];
+                
                 await scanFolder(dirHandle);
                 renderResults();
             } catch (err) {
                 if(err.name !== 'AbortError') {
                     console.error(err);
-                    setStatus("Error: Permission denied or folder access failed.");
+                    setStatus("Error: Folder access failed.");
                 }
             }
         }
@@ -335,29 +438,40 @@
         async function scanFolder(dirHandle, path = "") {
             for await (const entry of dirHandle.values()) {
                 const fullPath = path ? `${path}/${entry.name}` : entry.name;
+                
                 if (entry.kind === 'file') {
+                    updateProgress(fullPath);
                     const file = await entry.getFile();
                     const hash = await generateSpeedHash(file);
                     
-                    if (!duplicateGroups[hash]) duplicateGroups[hash] = [];
-                    
-                    let preview = null;
+                    let meta = {
+                        name: entry.name,
+                        path: fullPath,
+                        size: file.size,
+                        modified: file.lastModified,
+                        type: file.type,
+                        resolution: null
+                    };
+
                     if (file.type.startsWith('image/')) {
-                        // Using FileReader to get Base64 for better compatibility
-                        preview = await new Promise((resolve) => {
+                        meta.preview = await new Promise((resolve) => {
                             const reader = new FileReader();
                             reader.onloadend = () => resolve(reader.result);
                             reader.readAsDataURL(file);
                         });
+                        
+                        const img = new Image();
+                        img.src = meta.preview;
+                        await new Promise(r => img.onload = () => {
+                            meta.resolution = `${img.width}x${img.height}`;
+                            r();
+                        });
                     }
                     
-                    duplicateGroups[hash].push({
-                        name: entry.name,
-                        path: fullPath,
-                        size: file.size,
-                        preview: preview,
-                        modified: new Date(file.lastModified).toLocaleDateString()
-                    });
+                    if (!duplicateGroups[hash]) duplicateGroups[hash] = [];
+                    duplicateGroups[hash].push(meta);
+                    allFiles.push(meta);
+
                 } else if (entry.kind === 'directory') {
                     await scanFolder(entry, fullPath);
                 }
@@ -365,11 +479,16 @@
         }
 
         async function generateSpeedHash(file) {
-            const chunk = file.slice(0, 16384);
-            const buffer = await chunk.arrayBuffer();
-            const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+            const head = file.slice(0, 16384);
+            const tail = file.slice(Math.max(0, file.size - 16384));
+            const headBuf = await head.arrayBuffer();
+            const tailBuf = await tail.arrayBuffer();
+            const combined = new Uint8Array(headBuf.byteLength + tailBuf.byteLength);
+            combined.set(new Uint8Array(headBuf), 0);
+            combined.set(new Uint8Array(tailBuf), headBuf.byteLength);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', combined);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return `${file.size}-${hashArray.map(b => b.toString(16).padStart(2, '0')).join('')}`;
+            return `${file.size}-${hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16)}`;
         }
 
         function renderResults() {
@@ -380,34 +499,86 @@
             Object.entries(duplicateGroups).forEach(([hash, files]) => {
                 if (files.length > 1) {
                     groupCount++;
-                    const groupContainer = document.createElement('div');
-                    groupContainer.className = "duplicate-group";
-                    
-                    const listHtml = files.map(f => `
-                        <div class="file-card">
-                            <input type="checkbox" onchange="toggleFile('${f.path}', this.checked)">
-                            <div class="preview-box">
-                                ${f.preview ? `<img src="${f.preview}" class="preview-img">` : `<span style="font-size:10px; font-weight:bold; color:var(--text-muted)">${f.name.split('.').pop().toUpperCase()}</span>`}
-                            </div>
-                            <div style="flex:1; min-width:0">
-                                <p style="margin:0; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 0.9rem;">${f.name}</p>
-                                <p style="margin:0.2rem 0 0 0; font-size:0.7rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${f.path}</p>
-                                <p style="margin:0.2rem 0 0 0; font-size:0.65rem; color:var(--accent-blue);">Size: ${(f.size/1024).toFixed(2)} KB</p>
-                            </div>
-                        </div>
-                    `).join('');
-                    
-                    groupContainer.innerHTML = `<div style="font-size:10px; color:var(--accent-red); font-weight:bold; letter-spacing: 1px; margin-bottom:10px;">DUPLICATE SET ${groupCount}</div>${listHtml}`;
-                    grid.appendChild(groupContainer);
+                    grid.appendChild(createGroupUI(files, `HASH MATCH SET ${groupCount}`));
                 }
             });
 
+            document.getElementById('progressContainer').classList.add('hidden');
+            document.getElementById('currentPath').classList.add('hidden');
+
             if (groupCount > 0) {
-                setStatus(`Scan complete. Found ${groupCount} duplicate sets.`);
+                setStatus(`Found ${groupCount} sets of exact binary duplicates.`);
                 document.getElementById('actionBar').classList.remove('hidden');
             } else {
-                setStatus("Folder scan finished. No duplicates found.");
-                grid.innerHTML = `<div class="empty-state">No duplicates found in this folder.</div>`;
+                setStatus("No exact duplicates found. Try 'AI Deep Scan'.");
+                grid.innerHTML = `<div class="empty-state">No exact duplicates found.</div>`;
+                document.getElementById('actionBar').classList.remove('hidden');
+            }
+        }
+
+        function createGroupUI(files, titleText) {
+            const groupContainer = document.createElement('div');
+            groupContainer.className = "duplicate-group";
+            const listHtml = files.map(f => `
+                <div class="file-card">
+                    <input type="checkbox" onchange="toggleFile('${f.path}', this.checked)">
+                    <div class="preview-box">
+                        ${f.preview ? `<img src="${f.preview}" class="preview-img">` : `<span style="font-size:10px; font-weight:bold; color:var(--text-muted)">${f.name.split('.').pop().toUpperCase()}</span>`}
+                    </div>
+                    <div style="flex:1; min-width:0">
+                        <p style="margin:0; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 0.9rem;">${f.name}</p>
+                        <p style="margin:0.2rem 0 0 0; font-size:0.7rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${f.path}</p>
+                        <div style="margin-top: 0.3rem">
+                            <span class="metadata-tag">${(f.size/1024).toFixed(1)} KB</span>
+                            ${f.resolution ? `<span class="metadata-tag">${f.resolution}</span>` : ''}
+                            <span class="metadata-tag">${new Date(f.modified).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            groupContainer.innerHTML = `<div style="font-size:10px; color:var(--accent-red); font-weight:bold; letter-spacing: 1px; margin-bottom:10px;">${titleText}</div>${listHtml}`;
+            return groupContainer;
+        }
+
+        async function deepScanAI() {
+            const apiKey = document.getElementById('apiKey').value;
+            if (!apiKey) return alert("AI Deep Scan requires a Groq API Key.");
+            
+            setStatus("AI is analyzing file patterns, names, and resolutions...", true, false);
+            const btn = document.getElementById('deepScanBtn');
+            btn.disabled = true;
+
+            const fileList = allFiles.map(f => ({
+                name: f.name,
+                path: f.path,
+                size: f.size,
+                res: f.resolution,
+                date: new Date(f.modified).toISOString().split('T')[0]
+            }));
+
+            const prompt = `Act as a file system expert. Analyze this list of files and group them if they are likely duplicates or versions of the same content based on:
+            1. Similar names (e.g. "photo.jpg" vs "photo (1).jpg")
+            2. Same content in different resolutions (size/res comparison)
+            3. Identical sizes but different names.
+            
+            FILES: ${JSON.stringify(fileList)}
+            
+            Return ONLY a JSON array of arrays, where each inner array contains the 'path' strings of files that belong together.`;
+
+            try {
+                const responseText = await fetchGroqWithFallback(prompt);
+                const suggestedGroups = JSON.parse(responseText);
+                const grid = document.getElementById('resultsGrid');
+                grid.innerHTML = '<div style="background:var(--bg-card); padding:1rem; border-radius:0.5rem; color:var(--accent-green); margin-bottom:1rem; font-weight:bold">AI Deep Scan Results</div>';
+                suggestedGroups.forEach((paths, i) => {
+                    const groupFiles = allFiles.filter(f => paths.includes(f.path));
+                    if(groupFiles.length > 0) grid.appendChild(createGroupUI(groupFiles, `AI SUGGESTED GROUP ${i+1}`));
+                });
+                setStatus("AI Deep Scan complete.");
+            } catch (err) {
+                setStatus("AI Scan Error.");
+            } finally {
+                btn.disabled = false;
             }
         }
 
@@ -419,8 +590,11 @@
 
         function resetApp(full = true) {
             selectedPaths.clear();
+            allFiles = [];
+            totalFilesCount = 0;
+            processedFilesCount = 0;
+            document.getElementById('progressBar').style.width = '0%';
             document.getElementById('selectedCount').innerText = '0';
-            document.getElementById('resultsGrid').innerHTML = '';
             document.getElementById('resultsGrid').innerHTML = `<div id="emptyState" class="empty-state"><p>Select a folder to begin scanning.</p></div>`;
             document.getElementById('actionBar').classList.add('hidden');
             if(full) document.getElementById('statusBox').classList.add('hidden');
@@ -429,68 +603,52 @@
         async function processAI() {
             const apiKey = document.getElementById('apiKey').value;
             if (!apiKey) return alert("Please enter your Groq API Key.");
-            if (selectedPaths.size === 0) return alert("Please select at least one duplicate file to remove.");
-            
+            if (selectedPaths.size === 0) return alert("Select files to remove.");
             const type = document.getElementById('scriptType').value;
             const btn = document.getElementById('aiBtn');
             btn.disabled = true;
-            setStatus(`AI is generating your ${type.toUpperCase()} deletion script...`, true);
-            
-            const prompt = `Task: Create a professional script to delete duplicate files.
-            Format: ${type}
-            Logic: Set a variable DRY_RUN=true by default. If true, print names of files to delete. If false, perform the deletion.
-            Files to include in script: ${JSON.stringify(Array.from(selectedPaths))}
-            
-            Output ONLY the script code. No explanation or markers.`;
-            
+            setStatus(`Generating ${type.toUpperCase()} script...`, true);
+            const prompt = `Create a cleanup script (${type}) to delete these files. Include a 'DRY_RUN' mode. FILES: ${JSON.stringify(Array.from(selectedPaths))}`;
             try {
                 const code = await fetchGroqWithFallback(prompt);
                 const blob = new Blob([code], { type: 'text/plain' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url;
-                a.download = `cleanup_duplicates.${type}`;
-                a.click();
-                setStatus("Script generated and downloaded!", false);
+                a.href = url; a.download = `cleanup.${type}`; a.click();
+                setStatus("Script downloaded!", false);
             } catch (err) {
-                setStatus(`AI Generation Error: ${err.message}`, false);
-                console.error(err);
+                setStatus("Generation Error.", false);
             } finally {
                 btn.disabled = false;
             }
         }
 
         async function fetchGroqWithFallback(prompt, index = 0) {
-            if (index >= MODELS.length) throw new Error("All Groq models failed. Check your API key or connection.");
-            
+            if (index >= MODELS.length) throw new Error("API failure.");
             const apiKey = document.getElementById('apiKey').value;
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
-                    headers: { 
-                        "Authorization": `Bearer ${apiKey}`, 
-                        "Content-Type": "application/json" 
-                    },
+                    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ 
                         model: MODELS[index], 
-                        messages: [
-                            { role: "system", content: "You are a code generation assistant. Return raw script code only." },
-                            { role: "user", content: prompt }
-                        ],
-                        temperature: 0.1
+                        messages: [{ role: "user", content: prompt }],
+                        temperature: 0.1,
+                        response_format: prompt.includes("JSON") ? { type: "json_object" } : undefined
                     })
                 });
-                
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.error?.message || "Model error");
-                }
-                
+                if (!res.ok) throw new Error();
                 const data = await res.json();
                 let content = data.choices[0].message.content;
+                if (prompt.includes("JSON")) {
+                    try {
+                        const parsed = JSON.parse(content);
+                        if (Array.isArray(parsed)) return content;
+                        return JSON.stringify(Object.values(parsed)[0]);
+                    } catch(e) {}
+                }
                 return content.replace(/```[a-z]*\n/gi, '').replace(/```/g, '').trim();
             } catch (e) {
-                console.warn(`Model ${MODELS[index]} failed, trying next available model...`);
                 return fetchGroqWithFallback(prompt, index + 1);
             }
         }
